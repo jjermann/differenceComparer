@@ -1,0 +1,24 @@
+<Project>
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>nullable</WarningsAsErrors>
+    <TreatWarningsAsError>all</TreatWarningsAsError>
+  </PropertyGroup>
+  
+  <PropertyGroup>
+    <Authors>Jonas Jermann</Authors>
+    <Product>DifferenceComparer</Product>
+    <AssemblyVersion>0.1.0</AssemblyVersion>
+    <Version>0.1.0</Version>
+    <FileVersion>0.1.0</FileVersion>
+    <Description>Generates and compares differences between objects</Description>
+    <Copyright>Jonas Jermann</Copyright>
+    <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/jjermann/databasecomparer</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jjermann/databasecomparer.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+</Project>
