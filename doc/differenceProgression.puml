@@ -30,7 +30,7 @@ Diff0C2 --> C0M2
 
 Diff0C1 -> DiffP0C1C2
 DiffP0C1C2 -> Diff0C2
-C0 -[dashed]-> DiffP0C1C2
+DiffP0C1C2 -up[dashed]-> C0
 note on link
 A difference progression always
 has an implicit base collection.

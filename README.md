@@ -22,6 +22,7 @@ This is exactly the main functionality of `DifferenceComparer`.
 
 # Syntax
 ![Difference progression diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/jjermann/differenceComparer/main/doc/differenceProgression.puml)
+![Difference squash diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/jjermann/differenceComparer/main/doc/differenceSquash.puml)
 
 All that's required is an id equality comparer for entries to be able to match entries
 and a more strict equality comparer for entries to be able to check if they're different.

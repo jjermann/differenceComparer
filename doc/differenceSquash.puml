@@ -1,0 +1,34 @@
+@startuml
+title Difference-Squash\n
+
+'States
+state States #white {
+  state "State4 (S4)" as S4 #white
+  state "State3 (S3)" as S3 #white
+  state "State2 (S2)" as S2 #white
+  state "State1 (S1)" as S1 #white
+}
+
+state Differences #lightgreen {
+  state "Difference 3->4 (D34)" as D34 #lightgreen
+  state "Difference 2->3 (D23)" as D23 #lightgreen
+  state "Difference 1->2 (D12)" as D12 #lightgreen
+}
+
+state "Squashed difference 1->4 (D14)" as D14 #lightblue
+note right of D14
+The squased difference
+can becalculated from the individual differences.
+end note
+
+'Edges
+S3 --> D34
+S2 --> D23
+S1 --> D12
+D34 --> S4
+D23 --> S3
+D12 --> S2
+
+S1 --> D14
+D14 --> S4
+@enduml
