@@ -9,7 +9,6 @@ namespace DifferenceComparer
     {
         public IEqualityComparer<T> EntryIdEqualityComparer { get; }
         public IEqualityComparer<T> EntryEqualityComparer { get; }
-        public IEqualityComparer<DifferenceEntry<T>> DifferenceEqualityComparer { get; }
 
         /// <param name="entryIdEqualityComparer">
         /// EqualityComparer for BusinessId.
@@ -29,7 +28,6 @@ namespace DifferenceComparer
         {
             EntryIdEqualityComparer = entryIdEqualityComparer;
             EntryEqualityComparer = equalityComparer ?? EqualityComparer<T>.Default;
-            DifferenceEqualityComparer = DifferenceEntry<T>.GetEqualityComparer(EntryEqualityComparer);
         }
 
         // Remark: It is possible to change this to an algorithm that first only works on Ids and handles whole Entries only as enumerables.
@@ -58,14 +56,16 @@ namespace DifferenceComparer
                 .Select(id => new DifferenceEntry<T>(
                     null,
                     idDictionary2[id],
-                    EntryIdEqualityComparer))
+                    EntryIdEqualityComparer,
+                    EntryEqualityComparer))
                 .ToList();
             differenceEntryList.AddRange(addList);
             var deleteList = deleteIdHashSet
                 .Select(id => new DifferenceEntry<T>(
                     idDictionary1[id],
                     null,
-                    EntryIdEqualityComparer))
+                    EntryIdEqualityComparer,
+                    EntryEqualityComparer))
                 .ToList();
             differenceEntryList.AddRange(deleteList);
             var updateList = updateCandidateIdHashSet
@@ -73,7 +73,8 @@ namespace DifferenceComparer
                 .Select(id => new DifferenceEntry<T>(
                     idDictionary1[id],
                     idDictionary2[id],
-                    EntryIdEqualityComparer))
+                    EntryIdEqualityComparer,
+                    EntryEqualityComparer))
                 .ToList();
             differenceEntryList.AddRange(updateList);
 
@@ -156,17 +157,13 @@ namespace DifferenceComparer
                 throw new ArgumentException(msg);
             }
 
-            if (deleteInBothIdHashSet.Any(id =>
-                    !DifferenceEqualityComparer.Equals(differenceList1IdDictionary[id],
-                        differenceList2IdDictionary[id])))
+            if (deleteInBothIdHashSet.Any(id => !differenceList1IdDictionary[id].Equals(differenceList2IdDictionary[id])))
             {
                 var msg = "Inconsistency: Can't have unequal Delete differences for the same Id!";
                 throw new ArgumentException(msg);
             }
 
-            if (updateInBothIdHashSet.Any(id =>
-                    !DifferenceEqualityComparer.Equals(differenceList1IdDictionary[id],
-                        differenceList2IdDictionary[id])))
+            if (updateInBothIdHashSet.Any(id => !differenceList1IdDictionary[id].Equals(differenceList2IdDictionary[id])))
             {
                 var msg = "Inconsistency: Can't have unequal Update differences for the same Id!";
                 throw new ArgumentException(msg);
@@ -292,7 +289,8 @@ namespace DifferenceComparer
             return new DifferenceEntry<T>(
                 differenceProgressionEntry1.EntryAfter,
                 differenceProgressionEntry2.EntryAfter,
-                EntryIdEqualityComparer);
+                EntryIdEqualityComparer,
+                EntryEqualityComparer);
         }
 
         // Remark: This method is not really symmetric (resp. switched arguments don't make sense).
@@ -308,7 +306,11 @@ namespace DifferenceComparer
                 return null;
             }
 
-            return new DifferenceEntry<T>(entryBefore, entryAfter, EntryIdEqualityComparer);
+            return new DifferenceEntry<T>(
+                entryBefore,
+                entryAfter,
+                EntryIdEqualityComparer,
+                EntryEqualityComparer);
         }
 
         // Remark: It is possible to change this to an algorithm that first only works on Ids and handles whole Entries only as enumerables.
@@ -360,13 +362,15 @@ namespace DifferenceComparer
                 .Select(id => new DifferenceEntry<T>(
                     null,
                     differenceList1IdDictionary[id].EntryBefore,
-                    EntryIdEqualityComparer))
+                    EntryIdEqualityComparer,
+                    EntryEqualityComparer))
                 .ToList();
             var addList3 = (delete1IdHashSet.Except(delete2IdHashSet)).Intersect(update2IdHashSet)
                 .Select(id => new DifferenceEntry<T>(
                     null,
                     differenceList2IdDictionary[id].EntryAfter,
-                    EntryIdEqualityComparer))
+                    EntryIdEqualityComparer,
+                    EntryEqualityComparer))
                 .ToList();
             differenceEntryList.AddRange(addList1);
             differenceEntryList.AddRange(addList2);
@@ -380,7 +384,8 @@ namespace DifferenceComparer
                 .Select(id => new DifferenceEntry<T>(
                     differenceList1IdDictionary[id].EntryAfter,
                     null,
-                    EntryIdEqualityComparer))
+                    EntryIdEqualityComparer,
+                    EntryEqualityComparer))
                 .ToList();
             differenceEntryList.AddRange(delList1);
             differenceEntryList.AddRange(delList2);
@@ -453,7 +458,8 @@ namespace DifferenceComparer
                 .Select(id => new DifferenceEntry<T>(
                     null,
                     differenceListAfterIdDictionary[id].EntryAfter,
-                    EntryIdEqualityComparer))
+                    EntryIdEqualityComparer,
+                    EntryEqualityComparer))
                 .ToList();
             var addList2 = addAfterIdHashSet.Except(deleteBeforeIdHashSet)
                 .Select(id => differenceListAfterIdDictionary[id].Clone())
@@ -473,7 +479,8 @@ namespace DifferenceComparer
                 .Select(id => new DifferenceEntry<T>(
                     differenceListBeforeIdDictionary[id].EntryBefore,
                     null,
-                    EntryIdEqualityComparer))
+                    EntryIdEqualityComparer,
+                    EntryEqualityComparer))
                 .ToList();
             differenceEntryList.AddRange(delList1);
             differenceEntryList.AddRange(delList21);
