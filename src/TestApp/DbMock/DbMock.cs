@@ -30,6 +30,13 @@ namespace TestApp.DbMock
             return _entryDictionary.Values.ToList();
         }
 
+        public IList<T> GetAllByIdList(IList<int> idList)
+        {
+            return idList
+                .Select(id => _entryDictionary[id])
+                .ToList();
+        }
+
         public HashSet<int> GetAllIds()
         {
             return _entryDictionary.Keys.ToHashSet();

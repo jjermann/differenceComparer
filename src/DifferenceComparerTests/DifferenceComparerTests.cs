@@ -49,7 +49,7 @@ namespace DifferenceComparerTests
             var differenceComparer = new DifferenceComparer<SimpleTestEntry>(new SimpleTestEntryIdEqualityComparer());
             var diffArray = Enumerable.Range(0, stateArray.Length - 1)
                 .Select(i => differenceComparer.GetDifference(stateArray[i], stateArray[i + 1]))
-                .Cast<IList<DifferenceEntry<SimpleTestEntry>>>()
+                .Cast<ICollection<DifferenceEntry<SimpleTestEntry>>>()
                 .ToArray();
             var squashedDiff = differenceComparer.GetSquashedDifference(diffArray);
             var diffStartToEnd = differenceComparer.GetDifference(stateArray.First(), stateArray.Last());

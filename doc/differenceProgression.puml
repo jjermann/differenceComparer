@@ -8,13 +8,13 @@ state "After modification 1 (C0M1)" as C0M1 #white: Initial collection after mod
 
 state "After modification 2 (C0M2)" as C0M2 #white: Initial collection after modification 2
 
-state Diff0C1 #lightgreen: Difference from initial collection
-Diff0C1: to collection after modification 2
+state "Difference 1 (Diff0C1)" as Diff0C1 #lightgreen: Difference from initial collection
+Diff0C1: to collection after modification 1
 
-state Diff0C2 #lightgreen: Difference from initial collection
+state "Difference 2 (Diff0C2)" as Diff0C2 #lightgreen: Difference from initial collection
 Diff0C2: to collection after modification 2
 
-state DiffC1C2 #lightgreen: Difference from collection after modification 1
+state "Modification difference (DiffC1C2)" as DiffC1C2 #lightgreen: Difference from collection after modification 1
 DiffC1C2: to collection after modification 2
 
 state "Difference Progression (DiffP0C1C2)" as DiffP0C1C2 #lightblue: Difference progression from modification 1 to modification 2
@@ -32,13 +32,13 @@ Diff0C1 -> DiffP0C1C2
 DiffP0C1C2 -> Diff0C2
 C0 -[dashed]-> DiffP0C1C2
 note on link
-A difference progression
-always has a base collection.
+A difference progression always
+has an implicit base collection.
 end note
 DiffP0C1C2 -[dashed]-> DiffC1C2
 note on link
-The difference progression
-is identical to DiffC1C2.
+The difference progression is identical
+to the modification difference.
 end note
 
 C0M1 -> DiffC1C2

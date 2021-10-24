@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 namespace DifferenceComparer
 {
-    public class DifferenceEntry<T> : IEquatable<DifferenceEntry<T>>
-        where T : class
+    public class ValueDifferenceEntry<T> : IEquatable<ValueDifferenceEntry<T>>
+        where T : struct
     {
         private IEqualityComparer<T> EntryIdEqualityComparer { get; }
         private IEqualityComparer<T> EntryEqualityComparer { get; }
@@ -13,27 +12,27 @@ namespace DifferenceComparer
         public T? EntryBefore { get; }
         public T? EntryAfter { get; }
 
-        public DifferenceEntry(
+        public ValueDifferenceEntry(
             T? entryBefore,
             T? entryAfter,
-            IEqualityComparer<T> entryIdEqualityComparer,
-            IEqualityComparer<T>? entryEqualityComparer = null)
+            IEqualityComparer<T>? entryIdEqualityComparer,
+            IEqualityComparer<T>? entryEqualityComparer)
         {
             EntryBefore = entryBefore;
             EntryAfter = entryAfter;
-            EntryIdEqualityComparer = entryIdEqualityComparer;
+            EntryIdEqualityComparer = entryIdEqualityComparer ?? EqualityComparer<T>.Default;
             EntryEqualityComparer = entryEqualityComparer ?? EqualityComparer<T>.Default;
 
-            if (EntryBefore == null
-                && EntryAfter == null)
+            if (!EntryBefore.HasValue
+                && !EntryAfter.HasValue)
             {
                 var msg = "At least one entry must not be null!";
                 throw new ArgumentException(msg);
             }
 
-            if (EntryBefore != null
-                && EntryAfter != null
-                && !EntryIdEqualityComparer.Equals(EntryBefore, EntryAfter))
+            if (EntryBefore.HasValue
+                && EntryAfter.HasValue
+                && !EntryIdEqualityComparer.Equals(EntryBefore.Value, EntryAfter.Value))
             {
                 var msg = "The given entries can't have different ids!";
                 throw new ArgumentException(msg);
@@ -57,10 +56,10 @@ namespace DifferenceComparer
                 return false;
             }
 
-            return Equals((DifferenceEntry<T>)other);
+            return Equals((ValueDifferenceEntry<T>)other);
         }
 
-        public bool Equals(DifferenceEntry<T>? other)
+        public bool Equals(ValueDifferenceEntry<T>? other)
         {
             if (ReferenceEquals(other, null))
             {
@@ -88,17 +87,12 @@ namespace DifferenceComparer
                 return false;
             }
 
-            if (!EntryEqualityComparer.Equals(EntryBefore, other.EntryBefore))
-            {
-                return false;
-            }
+            var areEntryBeforeEqual = !EntryBefore.HasValue && !other.EntryBefore.HasValue
+                                     || EntryBefore.HasValue && other.EntryBefore.HasValue && EntryEqualityComparer.Equals(EntryBefore.Value, other.EntryBefore.Value);
+            var areEntryAfterEqual = !EntryAfter.HasValue && !other.EntryAfter.HasValue
+                                      || EntryAfter.HasValue && other.EntryAfter.HasValue && EntryEqualityComparer.Equals(EntryAfter.Value, other.EntryAfter.Value);
 
-            if (!EntryEqualityComparer.Equals(EntryAfter, other.EntryAfter))
-            {
-                return false;
-            }
-
-            return true;
+            return areEntryBeforeEqual && areEntryAfterEqual;
         }
 
         public override int GetHashCode()
@@ -106,11 +100,11 @@ namespace DifferenceComparer
             return HashCode.Combine(
                 DifferenceType,
                 Id,
-                EntryBefore != null
-                    ? EntryEqualityComparer.GetHashCode(EntryBefore)
+                EntryBefore.HasValue
+                    ? EntryEqualityComparer.GetHashCode(EntryBefore.Value)
                     : 0,
-                EntryAfter != null
-                    ? EntryEqualityComparer.GetHashCode(EntryAfter)
+                EntryAfter.HasValue
+                    ? EntryEqualityComparer.GetHashCode(EntryAfter.Value)
                     : 0);
         }
 
@@ -133,31 +127,13 @@ namespace DifferenceComparer
             }
         }
 
-        [NotNull]
-        public T ExampleEntry => EntryBefore ?? EntryAfter!;
+        public T ExampleEntry => EntryBefore ?? EntryAfter!.Value;
 
         public int Id => EntryIdEqualityComparer.GetHashCode(ExampleEntry);
 
-        public DifferenceEntry<T> Clone()
+        public ValueDifferenceEntry<T> Clone()
         {
-            return new DifferenceEntry<T>(EntryBefore, EntryAfter, EntryIdEqualityComparer, EntryEqualityComparer);
-        }
-
-        public DifferenceEntry<EntryRef> GetTrivialEntryRefDifference()
-        {
-            return new DifferenceEntry<EntryRef>(
-                EntryBefore != null
-                    ? new EntryRef(Id)
-                    : null,
-                EntryAfter != null
-                    ? new EntryRef(Id)
-                    : null,
-                EntryRef.IdEqualityComparer);
-        }
-
-        public DifferenceEntry<T> GetInverse()
-        {
-            return new DifferenceEntry<T>(EntryAfter, EntryBefore, EntryIdEqualityComparer, EntryEqualityComparer);
+            return new ValueDifferenceEntry<T>(EntryBefore, EntryAfter, EntryIdEqualityComparer, EntryEqualityComparer);
         }
 
         public string GetStringRepresentation(
@@ -169,9 +145,9 @@ namespace DifferenceComparer
 
             var result = DifferenceType switch
             {
-                DifferenceType.Add => $"Add:    {entryToStringFunc(EntryAfter!)}",
-                DifferenceType.Delete => $"Delete: {entryToStringFunc(EntryBefore!)}",
-                DifferenceType.Update => $"Update: {entryDifferenceToStringFunc(EntryBefore!, EntryAfter!)}",
+                DifferenceType.Add => $"Add:    {entryToStringFunc(ExampleEntry)}",
+                DifferenceType.Delete => $"Delete: {entryToStringFunc(ExampleEntry)}",
+                DifferenceType.Update => $"Update: {entryDifferenceToStringFunc(EntryBefore!.Value, EntryAfter!.Value)}",
                 _ => throw new NotImplementedException()
             };
 

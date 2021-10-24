@@ -17,7 +17,7 @@ namespace TestApp.DbMock
                 entryEqualityComparer ?? EqualityComparer<T>.Default);
         }
 
-        public IList<DifferenceEntry<T>> GetDifference(DbMock<T> dbMockBefore, DbMock<T> dbMockAfter)
+        public List<DifferenceEntry<T>> GetDifference(DbMock<T> dbMockBefore, DbMock<T> dbMockAfter)
         {
             var listBefore = dbMockBefore.GetAll();
             var listAfter = dbMockAfter.GetAll();
