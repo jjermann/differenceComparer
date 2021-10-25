@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace DifferenceComparer
 {
@@ -114,6 +116,7 @@ namespace DifferenceComparer
                     : 0);
         }
 
+        [JsonConverter(typeof(JsonStringEnumConverter))]
         public DifferenceType DifferenceType
         {
             get
@@ -133,9 +136,11 @@ namespace DifferenceComparer
             }
         }
 
+        [JsonIgnore]
         [NotNull]
         public T ExampleEntry => EntryBefore ?? EntryAfter!;
 
+        [JsonIgnore]
         public int Id => EntryIdEqualityComparer.GetHashCode(ExampleEntry);
 
         public DifferenceEntry<T> Clone()
@@ -160,22 +165,12 @@ namespace DifferenceComparer
             return new DifferenceEntry<T>(EntryAfter, EntryBefore, EntryIdEqualityComparer, EntryEqualityComparer);
         }
 
-        public string GetStringRepresentation(
-            Func<T, string>? entryToStringFunc = null,
-            Func<T, T, string>? entryDifferenceToStringFunc = null)
+        public override string ToString()
         {
-            entryToStringFunc ??= entry => $"{typeof(T).Name}({EntryIdEqualityComparer.GetHashCode(entry)})";
-            entryDifferenceToStringFunc ??= (entryBefore, entryAfter) => $"{entryToStringFunc(entryBefore)} -> {entryToStringFunc(entryAfter)}";
-
-            var result = DifferenceType switch
+            return JsonSerializer.Serialize(this, new JsonSerializerOptions
             {
-                DifferenceType.Add => $"Add:    {entryToStringFunc(EntryAfter!)}",
-                DifferenceType.Delete => $"Delete: {entryToStringFunc(EntryBefore!)}",
-                DifferenceType.Update => $"Update: {entryDifferenceToStringFunc(EntryBefore!, EntryAfter!)}",
-                _ => throw new NotImplementedException()
-            };
-
-            return result;
+                WriteIndented = true
+            });
         }
     }
 }

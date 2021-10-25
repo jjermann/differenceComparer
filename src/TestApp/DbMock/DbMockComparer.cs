@@ -6,13 +6,13 @@ namespace TestApp.DbMock
     public class DbMockComparer<T>
         where T : class
     {
-        private readonly DifferenceComparer<T> _differenceComparer;
+        public DifferenceComparer<T> DifferenceComparer { get; }
 
         public DbMockComparer(
             IEqualityComparer<T> entryIdEqualityComparer,
             IEqualityComparer<T>? entryEqualityComparer = null)
         {
-            _differenceComparer = new DifferenceComparer<T>(
+            DifferenceComparer = new DifferenceComparer<T>(
                 entryIdEqualityComparer,
                 entryEqualityComparer ?? EqualityComparer<T>.Default);
         }
@@ -22,7 +22,7 @@ namespace TestApp.DbMock
             var listBefore = dbMockBefore.GetAll();
             var listAfter = dbMockAfter.GetAll();
 
-            return _differenceComparer.GetDifference(listBefore, listAfter);
+            return DifferenceComparer.GetDifference(listBefore, listAfter);
         }
     }
 }
