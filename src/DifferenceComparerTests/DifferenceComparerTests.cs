@@ -41,6 +41,30 @@ namespace DifferenceComparerTests
             diffOfDiffHashCodeList.Should().BeEquivalentTo(diff3HashCodeList);
         }
 
+        [TestCase(0, 1, 2, 3)]
+        [TestCase(0, 1, 3, 2)]
+        [TestCase(0, 2, 1, 3)]
+        [TestCase(0, 2, 3, 1)]
+        [TestCase(0, 3, 1, 2)]
+        [TestCase(0, 3, 2, 1)]
+        [TestCase(1, 2, 3, 0)]
+        [TestCase(1, 2, 0, 3)]
+        [TestCase(1, 3, 2, 0)]
+        [TestCase(1, 3, 0, 2)]
+        [TestCase(1, 0, 2, 3)]
+        [TestCase(1, 0, 3, 2)]
+        [TestCase(2, 3, 0, 1)]
+        [TestCase(2, 3, 1, 0)]
+        [TestCase(2, 0, 3, 1)]
+        [TestCase(2, 0, 1, 3)]
+        [TestCase(2, 1, 3, 0)]
+        [TestCase(2, 1, 0, 3)]
+        [TestCase(3, 0, 1, 2)]
+        [TestCase(3, 0, 2, 1)]
+        [TestCase(3, 1, 0, 2)]
+        [TestCase(3, 1, 2, 0)]
+        [TestCase(3, 2, 0, 1)]
+        [TestCase(3, 2, 1, 0)]
         public void GetSquashDifferenceTest(params int[] indexArray)
         {
             var stateArray = indexArray
@@ -49,8 +73,8 @@ namespace DifferenceComparerTests
             var differenceComparer = new DifferenceComparer<SimpleTestEntry>(new SimpleTestEntryIdEqualityComparer());
             var diffArray = Enumerable.Range(0, stateArray.Length - 1)
                 .Select(i => differenceComparer.GetDifference(stateArray[i], stateArray[i + 1]))
-                .Cast<ICollection<DifferenceEntry<SimpleTestEntry>>>()
                 .ToArray();
+            // ReSharper disable once CoVariantArrayConversion
             var squashedDiff = differenceComparer.GetSquashedDifference(diffArray);
             var diffStartToEnd = differenceComparer.GetDifference(stateArray.First(), stateArray.Last());
 

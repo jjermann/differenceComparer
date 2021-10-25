@@ -1,4 +1,5 @@
-﻿using TestApp.DbMock;
+﻿using DifferenceComparer;
+using TestApp.DbMock;
 using TestApp.TestData;
 
 namespace TestApp
@@ -10,18 +11,31 @@ namespace TestApp
             Test();
         }
 
+        // ReSharper disable UnusedVariable
         private static void Test()
         {
-            var dbMockComparer = new DbMockComparer<SimpleTestEntry>(new SimpleTestEntryIdEqualityComparer());
+            var dbMockBefore = SimpleDbMock.InitializeFromCollection(
+                TestDataGenerator.GetSimpleTestEntryList0().ToArray());
+            var dbMockAfter = SimpleDbMock.InitializeFromCollection(
+                TestDataGenerator.GetSimpleTestEntryList1().ToArray());
 
-            var dbMockBefore = new DbMock<SimpleTestEntry>(new SimpleTestEntryIdEqualityComparer());
-            dbMockBefore.Add(TestDataGenerator.GetSimpleTestEntryList0().ToArray());
+            var differenceComparer = new DifferenceComparer<SimpleTestEntry>(
+                new SimpleTestEntryIdEqualityComparer());
+            
+            var normalDifferenceList = differenceComparer.GetDifference(
+                dbMockBefore.GetAll(),
+                dbMockAfter.GetAll());
 
-            var dbMockAfter = new DbMock<SimpleTestEntry>(new SimpleTestEntryIdEqualityComparer());
-            dbMockAfter.Add(TestDataGenerator.GetSimpleTestEntryList1().ToArray());
+            var entryRefDifferenceList = differenceComparer.GetEntryRefDifference(
+                dbMockBefore.GetAllIds(),
+                dbMockAfter.GetAllIds());
+            var performantDifferenceList = differenceComparer.GetDifference(
+                entryRefDifferenceList,
+                dbMockBefore.GetAllEnumerable(),
+                dbMockAfter.GetAllEnumerable());
 
-            // ReSharper disable once UnusedVariable
-            var differenceList = dbMockComparer.GetDifference(dbMockBefore, dbMockAfter);
+            var serialized = differenceComparer.SerializeDifference(performantDifferenceList);
+            var deserialized = differenceComparer.DeserializeDifference(serialized);
         }
     }
 }

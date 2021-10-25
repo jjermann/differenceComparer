@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using DifferenceComparer;
 
 namespace TestApp.DbMock
@@ -13,16 +14,64 @@ namespace TestApp.DbMock
         where T : class
     {
         private readonly IEqualityComparer<T> _entryIdEqualityComparer;
-        private readonly IEqualityComparer<T> _entryEqualityComparer;
         private readonly IDictionary<int, T> _entryDictionary;
 
-        public DbMock(
-            IEqualityComparer<T> entryIdEqualityComparer,
-            IEqualityComparer<T>? entryEqualityComparer = null)
+        public DbMock(IEqualityComparer<T> entryIdEqualityComparer)
         {
             _entryIdEqualityComparer = entryIdEqualityComparer;
-            _entryEqualityComparer = entryEqualityComparer ?? EqualityComparer<T>.Default;
             _entryDictionary = new Dictionary<int, T>();
+        }
+
+        public static DbMock<T> InitializeFromJson(
+            IEqualityComparer<T> entryIdEqualityComparer,
+            string json,
+            JsonSerializerOptions? options = null)
+        {
+            var dbMock = new DbMock<T>(entryIdEqualityComparer);
+            dbMock.AddFromJson(json, options);
+
+            return dbMock;
+        }
+
+        public int AddFromJson(string json, JsonSerializerOptions? options = null)
+        {
+            var entryList = JsonSerializer.Deserialize<ICollection<T>>(json, options);
+
+            if (entryList == null)
+            {
+                throw new InvalidOperationException("Unable to deserialize collection!");
+            }
+
+            return Add(entryList.ToArray());
+        }
+
+        public string SerializeToJson(JsonSerializerOptions? options = null)
+        {
+            options ??= new JsonSerializerOptions
+            {
+                WriteIndented = true
+            };
+
+            return JsonSerializer.Serialize(_entryDictionary.Values, options);
+        }
+
+        public IEnumerable<T> GetAllAsOrderedEnumerable()
+        {
+            foreach (var entry in _entryDictionary.Keys
+                         .OrderBy(id => id)
+                         .Select(id => _entryDictionary[id]))
+            {
+                yield return entry;
+            }
+        }
+
+        public IEnumerable<T> GetAllEnumerableByIdList(IList<int> idList)
+        {
+            foreach (var entry in idList
+                .Select(id => _entryDictionary[id]))
+            {
+                yield return entry;
+            }
         }
 
         public IList<T> GetAll()
@@ -119,7 +168,7 @@ namespace TestApp.DbMock
             return count;
         }
 
-        public int ApplyDifference(params DifferenceEntry<T>[] differenceArray)
+        public int ApplyDifference(params EquatableDifferenceEntry<T>[] differenceArray)
         {
             var count = 0;
 
@@ -140,19 +189,6 @@ namespace TestApp.DbMock
                     if (!_entryDictionary.ContainsKey(id))
                     {
                         var msg = $"Can't ApplyDifference: Entry for Id={id} not yet present!";
-                        throw new InvalidOperationException(msg);
-                    }
-
-                    var existingEntry = _entryDictionary[id];
-                    if (!_entryEqualityComparer.Equals(differenceEntry.EntryBefore, existingEntry))
-                    {
-                        var msg = $"Can't ApplyDifference: Entry for Id={id} does not match DifferenceEntry.EntryBefore!";
-                        throw new InvalidOperationException(msg);
-                    }
-
-                    if (_entryEqualityComparer.Equals(differenceEntry.EntryAfter, existingEntry))
-                    {
-                        var msg = $"Can't ApplyDifference: DifferenceEntry.EntryAfter is already present (no difference)!";
                         throw new InvalidOperationException(msg);
                     }
 
