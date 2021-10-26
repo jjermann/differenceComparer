@@ -13,11 +13,11 @@
     <AssemblyVersion>0.1.0</AssemblyVersion>
     <Version>0.1.0</Version>
     <FileVersion>0.1.0</FileVersion>
-    <Description>Generates and compares differences between objects</Description>
+    <Description>Tool to generate and work with data state differences</Description>
     <Copyright>Jonas Jermann</Copyright>
     <PackageLicenseUrl>https://opensource.org/licenses/MIT</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/jjermann/databasecomparer</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/jjermann/databasecomparer.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/jjermann/differenceComparer</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jjermann/differenceComparer.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 

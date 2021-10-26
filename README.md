@@ -1,34 +1,114 @@
 # DifferenceComparer
-DifferenceComparer can be used to generate and apply differences between data entries and data difference entries (with the same schema).
+A tool to generate and work with data state differences (with the same schema).
 
-The main idea and application behind the DifferenceComparer is to be able to work with differences instead of whole data states.
-For example take the following context:
-We are interested in writing database compare integration tests for a batch run (or any other kind of procedure that modifies the database state).
-So let's say we have a database with state D0 and after the batch run it's in state D0'.
-We want to add regression tests to detect database changes in case we change the batch.
-I.e. if change the batch and run it and we now get a state D0'' we are interested in the difference between D0' and D0''.
-Such a test is usually setup by maintaining both D0 (to be able to start the batch on that state) and D0' (to be able to compare the result D0'' to D0').
-But if the database is rather large and the difference (D0 to D0' but also D0' to D0'') is rather small (at least compared to D0, which is usually the case)
-this requires a lot of space.
-Instead we could do the following:
-We still store D0 (to be able to run the test).
-But instead of storing D0' we store the difference between D0 and D0' (let's call it Diff').
-And instead of comparing D0' to D0'' we "compare Diff' to Diff''".
-First off this saves a lot of space and in addition this comparison directly stores (and shows) the deviations from the original batch changes.
-Which can be more meaningful/useful especially for regression tests.
+# Motivation
+The main idea and application behind `DifferenceComparer` is to be able to work with differences instead of whole data states.
+This has several benefits and is particularly useful for regression tests:
+- Differences take up a lot less space compared to two full data sets.
+- If multiple result sets are compared the space gain is even bigger.
+- Differences (especially in regression tests) are often more meaningful.
 
-So the main challenge is to deduce the difference between D0' to D0'' from the Diff' and Diff''.
-This is exactly the main functionality of `DifferenceComparer`.
+# Reference Example / Challenges
+Differences also provide more challenges. To illustrate this let's assume we have a situation with 3 data states S0, S1, S2.
+where S0 could correspond to an initial data set and S1/S2 to some changes to the initial data set.
 
-# Syntax
+- Example/Challenge A: Parallel changes
+  This could be a batch1 run (S0 -> S1) and a batch2 run (S0 -> S2).
+  Batch2 could e.g. be batch1 with some minor code changes for which we want to do regression tests.
+  In this situation one would usually have the initial state S0 (to be able to run the batch) and Diff(S0, S1) as a reference difference.
+  When running the regression tests for batch2 we would consequently get Diff(S0, S2).
+  Of interest is usually the differences between the end states S1 and S2 i.e. Diff(S1, S2).
+  This poses the following challenge (difference progression):
+  How do we calculate Diff(S1, S2) from Diff(S0, S1) and Diff(S0, S2)?
+
+- Example/Challenge B: Consecutive changes
+  This could be a sequence of changes (S0 -> S1 -> S2).
+  Let's again assume that we only have S0, Diff(S0, S1), Diff(S1, S2) and we are interested in the overall difference Diff(S0, S2).
+  This poses the following challenge (squashed progressions):
+  How do we calculate Diff(S1, S2) from Diff(S0, S1) and Diff(S0, S2)?
+
+`DifferenceComparer` provides algorithmic answers for both cases (assuming the schema doesn't change):
+
+## Difference progression
+Also see Example A above...
 ![Difference progression diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/jjermann/differenceComparer/main/doc/differenceProgression.puml)
+
+## Squashed progressions
+Also see Example B above...
 ![Difference squash diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/jjermann/differenceComparer/main/doc/differenceSquash.puml)
 
-All that's required is an id equality comparer for entries to be able to match entries
-and a more strict equality comparer for entries to be able to check if they're different.
-If no equality comparer is provided then the default equality comparer for the entries is used.
+# Basic syntax and examples
+See [TestApp](https://github.com/jjermann/differenceComparer/blob/main/src/TestApp/Program.cs) for an example application (it uses a small DbMock).
+## Classes
+- ```DifferenceEntry<T>```
+- ```EquatableDifferenceEntry<T>: DifferenceEntry<T>, IEquatable<EquatableDifferenceEntry<T>>```
+- ```EntryRef(int Id, int Index = 0)```
+
+## Constructor
+```
+public DifferenceComparer(
+    IEqualityComparer<T> entryIdEqualityComparer,
+    IEqualityComparer<T>? equalityComparer = null)
+```
+
+## (De)serialize
+```
+public string SerializeDifference(
+    ICollection<DifferenceEntry<T>> differenceEntryCollection,
+    JsonSerializerOptions? options = null)
+```
+```
+public ICollection<DifferenceEntry<T>> DeserializeDifference(
+    string json,
+    JsonSerializerOptions? options = null)
+```
+
+## Difference between data sets
+```
+public List<DifferenceEntry<T>> GetDifference(
+    in ICollection<T> col1,
+    in ICollection<T> col2)
+```
+```
+public List<DifferenceEntry<T>> GetDifference(
+    in ICollection<EquatableDifferenceEntry<EntryRef>> entryRefDifferenceCollection,
+    in IEnumerable<T> data1,
+    in IEnumerable<T> data2)
+```
+
+## Difference progression
+```
+public List<DifferenceEntry<T>> GetDifferenceProgression(
+    in ICollection<EquatableDifferenceEntry<EntryRef>> entryRefDifferenceCollection,
+    in IEnumerable<DifferenceEntry<T>> differenceData1,
+    in IEnumerable<DifferenceEntry<T>> differenceData2)
+```
+
+```
+public List<DifferenceEntry<T>> GetDifferenceProgression(
+    in ICollection<DifferenceEntry<T>> differenceList1,
+    in ICollection<DifferenceEntry<T>> differenceList2)
+```
+
+## Support methods
+```
+public EquatableDifferenceEntry<T> ToEquatableDifferenceEntry(DifferenceEntry<T> differenceEntry)
+```
+```
+public List<EquatableDifferenceEntry<EntryRef>> GetEntryRefDifference(
+    in ICollection<int> col1,
+    in ICollection<int> col2)
+```
+```
+public List<EquatableDifferenceEntry<EntryRef>> GetEntryRefDifferenceProgression(
+    in ICollection<EquatableDifferenceEntry<EntryRef>> entryRefDifferenceList1,
+    in ICollection<EquatableDifferenceEntry<EntryRef>> entryRefDifferenceList2)
+```
+
+## Squashed differences
+```
+public List<DifferenceEntry<T>> GetSquashedDifference(params ICollection<DifferenceEntry<T>>[] differenceCollectionArray)
+```
 
 # Limitations
 - `DifferenceComparer` assumes that the schema remains unchanged.
-- Currently `DifferenceComparer` doesn't really provide data (de)serialization or loading mechanisms (for both data entries and difference entries).
-- At the moment no "nice" difference representation (or (de)serialization) is supported.
