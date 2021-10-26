@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace DifferenceComparer
+namespace DifferenceComparer.Model
 {
     public class EquatableDifferenceEntry<T>: DifferenceEntry<T>, IEquatable<EquatableDifferenceEntry<T>>
         where T : class
@@ -112,14 +112,7 @@ namespace DifferenceComparer
 
         public EquatableDifferenceEntry<EntryRef> GetTrivialEntryRefDifference()
         {
-            return new EquatableDifferenceEntry<EntryRef>(
-                EntryBefore != null
-                    ? new EntryRef(Id)
-                    : null,
-                EntryAfter != null
-                    ? new EntryRef(Id)
-                    : null,
-                EntryRef.IdEqualityComparer);
+            return GetTrivialEntryRefDifference(EntryIdEqualityComparer);
         }
 
         public EquatableDifferenceEntry<T> GetInverse()

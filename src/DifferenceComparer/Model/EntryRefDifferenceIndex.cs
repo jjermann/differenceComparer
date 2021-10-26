@@ -1,4 +1,4 @@
-namespace DifferenceComparer
+namespace DifferenceComparer.Model
 {
     public enum EntryRefDifferenceIndex
     {

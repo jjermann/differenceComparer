@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DifferenceComparer
+namespace DifferenceComparer.Model
 {
     internal class EntryRefIdEqualityComparer : IEqualityComparer<EntryRef>
     {

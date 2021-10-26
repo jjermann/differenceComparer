@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
-using DifferenceComparer;
+using DifferenceComparer.Model;
 
-namespace TestApp.DbMock
+namespace TestApp.Mocks
 {
     /// <summary>
     /// Memory DB Mock.
@@ -13,13 +13,13 @@ namespace TestApp.DbMock
     public class DbMock<T>
         where T : class
     {
-        private readonly IEqualityComparer<T> _entryIdEqualityComparer;
-        private readonly IDictionary<int, T> _entryDictionary;
+        protected readonly IEqualityComparer<T> IdEqualityComparer;
+        protected readonly IDictionary<int, T> EntryDictionary;
 
-        public DbMock(IEqualityComparer<T> entryIdEqualityComparer)
+        public DbMock(IEqualityComparer<T> idEqualityComparer)
         {
-            _entryIdEqualityComparer = entryIdEqualityComparer;
-            _entryDictionary = new Dictionary<int, T>();
+            IdEqualityComparer = idEqualityComparer;
+            EntryDictionary = new Dictionary<int, T>();
         }
 
         public static DbMock<T> InitializeFromJson(
@@ -52,14 +52,14 @@ namespace TestApp.DbMock
                 WriteIndented = true
             };
 
-            return JsonSerializer.Serialize(_entryDictionary.Values, options);
+            return JsonSerializer.Serialize(EntryDictionary.Values, options);
         }
 
         public IEnumerable<T> GetAllAsOrderedEnumerable()
         {
-            foreach (var entry in _entryDictionary.Keys
+            foreach (var entry in EntryDictionary.Keys
                          .OrderBy(id => id)
-                         .Select(id => _entryDictionary[id]))
+                         .Select(id => EntryDictionary[id]))
             {
                 yield return entry;
             }
@@ -68,7 +68,7 @@ namespace TestApp.DbMock
         public IEnumerable<T> GetAllEnumerableByIdList(IList<int> idList)
         {
             foreach (var entry in idList
-                .Select(id => _entryDictionary[id]))
+                .Select(id => EntryDictionary[id]))
             {
                 yield return entry;
             }
@@ -76,24 +76,24 @@ namespace TestApp.DbMock
 
         public IList<T> GetAll()
         {
-            return _entryDictionary.Values.ToList();
+            return EntryDictionary.Values.ToList();
         }
 
         public IList<T> GetAllByIdList(IList<int> idList)
         {
             return idList
-                .Select(id => _entryDictionary[id])
+                .Select(id => EntryDictionary[id])
                 .ToList();
         }
 
         public HashSet<int> GetAllIds()
         {
-            return _entryDictionary.Keys.ToHashSet();
+            return EntryDictionary.Keys.ToHashSet();
         }
 
         public T Get(int id)
         {
-            return _entryDictionary[id];
+            return EntryDictionary[id];
         }
 
         public int Add(params T[] entryArray)
@@ -102,13 +102,13 @@ namespace TestApp.DbMock
             {
                 var id = GetId(entry);
 
-                if (_entryDictionary.ContainsKey(id))
+                if (EntryDictionary.ContainsKey(id))
                 {
                     var msg = $"Can't Add: Entry for Id={id} already present!";
                     throw new InvalidOperationException(msg);
                 }
 
-                _entryDictionary[id] = entry;
+                EntryDictionary[id] = entry;
             }
 
             return entryArray.Length;
@@ -120,13 +120,13 @@ namespace TestApp.DbMock
             {
                 var id = GetId(entry);
 
-                if (!_entryDictionary.ContainsKey(id))
+                if (!EntryDictionary.ContainsKey(id))
                 {
                     var msg = $"Can't Update: Entry for Id={id} not yet present!";
                     throw new InvalidOperationException(msg);
                 }
 
-                _entryDictionary[id] = entry;
+                EntryDictionary[id] = entry;
             }
 
             return entryArray.Length;
@@ -137,7 +137,7 @@ namespace TestApp.DbMock
             foreach (var entry in entryArray)
             {
                 var id = GetId(entry);
-                _entryDictionary[id] = entry;
+                EntryDictionary[id] = entry;
             }
 
             return entryArray.Length;
@@ -147,13 +147,13 @@ namespace TestApp.DbMock
         {
             foreach (var id in idArray)
             {
-                if (!_entryDictionary.ContainsKey(id))
+                if (!EntryDictionary.ContainsKey(id))
                 {
                     var msg = $"Can't Delete: Entry for Id={id} not yet present!";
                     throw new InvalidOperationException(msg);
                 }
 
-                _entryDictionary.Remove(id);
+                EntryDictionary.Remove(id);
             }
 
             return idArray.Length;
@@ -161,9 +161,9 @@ namespace TestApp.DbMock
 
         public int Reset()
         {
-            var count = _entryDictionary.Count;
+            var count = EntryDictionary.Count;
 
-            _entryDictionary.Clear();
+            EntryDictionary.Clear();
 
             return count;
         }
@@ -186,7 +186,7 @@ namespace TestApp.DbMock
                 }
                 else
                 {
-                    if (!_entryDictionary.ContainsKey(id))
+                    if (!EntryDictionary.ContainsKey(id))
                     {
                         var msg = $"Can't ApplyDifference: Entry for Id={id} not yet present!";
                         throw new InvalidOperationException(msg);
@@ -201,7 +201,7 @@ namespace TestApp.DbMock
 
         private int GetId(T entry)
         {
-            return _entryIdEqualityComparer.GetHashCode(entry);
+            return IdEqualityComparer.GetHashCode(entry);
         }
     }
 }

@@ -1,12 +1,11 @@
 ﻿using System.Text.Json;
 using TestApp.TestData;
 
-namespace TestApp.DbMock
+namespace TestApp.Mocks
 {
     public class SimpleDbMock : DbMock<SimpleTestEntry>
     {
-        public SimpleDbMock()
-            : base(new SimpleTestEntryIdEqualityComparer())
+        public SimpleDbMock(): base(new SimpleTestEntryIdEqualityComparer())
         { }
 
         public static SimpleDbMock InitializeFromCollection(params SimpleTestEntry[] entryArray)

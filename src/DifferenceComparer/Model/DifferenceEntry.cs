@@ -1,9 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace DifferenceComparer
+namespace DifferenceComparer.Model
 {
     public class DifferenceEntry<T>
         where T : class
@@ -49,6 +50,19 @@ namespace DifferenceComparer
         [JsonIgnore]
         [NotNull]
         public T ExampleEntry => EntryBefore ?? EntryAfter!;
+
+        public EquatableDifferenceEntry<EntryRef> GetTrivialEntryRefDifference(
+            IEqualityComparer<T> entryIdEqualityComparer)
+        {
+            return new EquatableDifferenceEntry<EntryRef>(
+                EntryBefore != null
+                    ? new EntryRef(entryIdEqualityComparer.GetHashCode(EntryBefore))
+                    : null,
+                EntryAfter != null
+                    ? new EntryRef(entryIdEqualityComparer.GetHashCode(EntryAfter))
+                    : null,
+                EntryRef.IdEqualityComparer);
+        }
 
         public override string ToString()
         {

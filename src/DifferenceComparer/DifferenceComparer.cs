@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using DifferenceComparer.Model;
 
 namespace DifferenceComparer
 {
@@ -31,7 +32,7 @@ namespace DifferenceComparer
             EntryEqualityComparer = equalityComparer ?? EqualityComparer<T>.Default;
         }
 
-        public string JsonSerializeCollection(
+        public string SerializeDifference(
             ICollection<DifferenceEntry<T>> differenceEntryCollection,
             JsonSerializerOptions? options = null)
         {
@@ -43,7 +44,7 @@ namespace DifferenceComparer
             return JsonSerializer.Serialize(differenceEntryCollection, options);
         }
 
-        public ICollection<DifferenceEntry<T>> JsonDeserializeCollection(
+        public ICollection<DifferenceEntry<T>> DeserializeDifference(
             string json,
             JsonSerializerOptions? options = null)
         {
@@ -151,7 +152,7 @@ namespace DifferenceComparer
         }
 
         /// <summary>
-        /// Performant version to return the difference between two collections.
+        /// Memory efficient version to return the difference between two collections.
         /// As a prelimenary step entryRefDifferenceCollection must be determined from GetEntryRefDifference
         /// then the required data can be fetched (even as an enumerable) from data collection 1/2.
         /// Remark: Except for delete and add operations this unfortunately includes all data from both data sets.
@@ -197,7 +198,7 @@ namespace DifferenceComparer
         }
 
         // Remark: Switched arguments give the inverse difference.
-        // Remark: For a more performant version, see GetDifference above.
+        // Remark: For a more efficient version, see GetDifference above.
         public List<DifferenceEntry<T>> GetDifference(
             in ICollection<T> col1,
             in ICollection<T> col2)
@@ -585,7 +586,7 @@ namespace DifferenceComparer
         }
 
         /// <summary>
-        /// Performant version to return the difference progression between two differences.
+        /// Memory efficient version to return the difference progression between two differences.
         /// As a prelimenary step entryRefDifferenceCollection must be determined from GetEntryRefDifferenceProgression
         /// then the required difference data can be supplied (even as an enumerable).
         /// Remark: If the data arguments in the whole procedure are switched then the inverse difference is returned.
@@ -630,7 +631,7 @@ namespace DifferenceComparer
         }
 
         // Remark: Switched arguments give the inverse difference.
-        // Remark: For a more performant version, see GetDifferenceProgression above.
+        // Remark: For a more efficient version, see GetDifferenceProgression above.
         public List<DifferenceEntry<T>> GetDifferenceProgression(
             in ICollection<DifferenceEntry<T>> differenceList1,
             in ICollection<DifferenceEntry<T>> differenceList2)
