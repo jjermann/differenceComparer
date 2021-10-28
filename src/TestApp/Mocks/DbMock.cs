@@ -10,7 +10,7 @@ namespace TestApp.Mocks
     /// Memory DB Mock.
     /// Warning: No clones are used, entries are returned directly.
     /// </summary>
-    public class DbMock<T, TU>
+    public class DbMock<T, TU> : IDbMock<T, TU>
         where T : class
         where TU : notnull
     {

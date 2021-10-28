@@ -2,6 +2,7 @@
 using System.Linq;
 using DifferenceComparer;
 using DifferenceComparer.Model;
+using TestApp.EF;
 using TestApp.Mocks;
 using TestApp.TestData;
 
@@ -11,20 +12,30 @@ namespace TestApp
     {
         static void Main()
         {
-            Test();
+            // Initialize data
+            var data0 = TestDataGenerator.GetSimpleTestEntryList0().ToArray();
+            var data1 = TestDataGenerator.GetSimpleTestEntryList1().ToArray();
+            var data2 = TestDataGenerator.GetSimpleTestEntryList2().ToArray();
+
+            // SimpleDbMock tests
+            var dbMock0 = SimpleDbMock.InitializeFromCollection(data0);
+            var dbMock1 = SimpleDbMock.InitializeFromCollection(data1);
+            var dbMock2 = SimpleDbMock.InitializeFromCollection(data2);
+            RunTests(dbMock0, dbMock1, dbMock2);
+
+            // EfSimpleDbMock tests
+            using var efDbMock0 = EfSimpleDbMock.InitializeFromCollection(data0);
+            using var efDbMock1 = EfSimpleDbMock.InitializeFromCollection(data1);
+            using var efDbMock2 = EfSimpleDbMock.InitializeFromCollection(data2);
+            RunTests(efDbMock0, efDbMock1, efDbMock2);
         }
 
         // ReSharper disable UnusedVariable
-        private static void Test()
+        private static void RunTests(
+            IDbMock<SimpleTestEntry, string> dbMock0,
+            IDbMock<SimpleTestEntry, string> dbMock1,
+            IDbMock<SimpleTestEntry, string> dbMock2)
         {
-            // Initialize data / DbMocks
-            var dbMock0 = SimpleDbMock.InitializeFromCollection(
-                TestDataGenerator.GetSimpleTestEntryList0().ToArray());
-            var dbMock1 = SimpleDbMock.InitializeFromCollection(
-                TestDataGenerator.GetSimpleTestEntryList1().ToArray());
-            var dbMock2 = SimpleDbMock.InitializeFromCollection(
-                TestDataGenerator.GetSimpleTestEntryList2().ToArray());
-
             // Create DifferenceComparer
             var differenceComparer = new DifferenceComparer<SimpleTestEntry, string>(
                 x => x.Id);
