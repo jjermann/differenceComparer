@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -51,17 +50,18 @@ namespace DifferenceComparer.Model
         [NotNull]
         public T ExampleEntry => EntryBefore ?? EntryAfter!;
 
-        public EquatableDifferenceEntry<EntryRef> GetTrivialEntryRefDifference(
-            IEqualityComparer<T> entryIdEqualityComparer)
+        public EquatableDifferenceEntry<EntryRef<TU>, TU> GetTrivialEntryRefDifference<TU>(
+            Func<T, TU> entryIdSelector)
+            where TU: notnull
         {
-            return new EquatableDifferenceEntry<EntryRef>(
+            return new EquatableDifferenceEntry<EntryRef<TU>, TU>(
                 EntryBefore != null
-                    ? new EntryRef(entryIdEqualityComparer.GetHashCode(EntryBefore))
+                    ? new EntryRef<TU>(entryIdSelector(EntryBefore))
                     : null,
                 EntryAfter != null
-                    ? new EntryRef(entryIdEqualityComparer.GetHashCode(EntryAfter))
+                    ? new EntryRef<TU>(entryIdSelector(EntryAfter))
                     : null,
-                EntryRef.IdEqualityComparer);
+                x => x.Id);
         }
 
         public override string ToString()

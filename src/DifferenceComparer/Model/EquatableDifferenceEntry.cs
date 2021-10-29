@@ -4,25 +4,28 @@ using System.Text.Json;
 
 namespace DifferenceComparer.Model
 {
-    public class EquatableDifferenceEntry<T>: DifferenceEntry<T>, IEquatable<EquatableDifferenceEntry<T>>
+    public class EquatableDifferenceEntry<T, TU> :
+        DifferenceEntry<T>,
+        IEquatable<EquatableDifferenceEntry<T, TU>>
         where T : class
+        where TU : notnull
     {
-        private IEqualityComparer<T> EntryIdEqualityComparer { get; }
+        private Func<T, TU> EntryIdSelector { get; }
         private IEqualityComparer<T> EntryEqualityComparer { get; }
 
         public EquatableDifferenceEntry(
             T? entryBefore,
             T? entryAfter,
-            IEqualityComparer<T> entryIdEqualityComparer,
+            Func<T, TU> entryIdSelector,
             IEqualityComparer<T>? entryEqualityComparer = null)
             : base(entryBefore, entryAfter)
         {
-            EntryIdEqualityComparer = entryIdEqualityComparer;
+            EntryIdSelector = entryIdSelector;
             EntryEqualityComparer = entryEqualityComparer ?? EqualityComparer<T>.Default;
 
             if (EntryBefore != null
                 && EntryAfter != null
-                && !EntryIdEqualityComparer.Equals(EntryBefore, EntryAfter))
+                && !EntryIdSelector(EntryBefore).Equals(EntryIdSelector(EntryAfter)))
             {
                 var msg = "The given entries can't have different ids!";
                 throw new ArgumentException(msg);
@@ -46,10 +49,10 @@ namespace DifferenceComparer.Model
                 return false;
             }
 
-            return Equals((EquatableDifferenceEntry<T>)other);
+            return Equals((EquatableDifferenceEntry<T, TU>)other);
         }
 
-        public bool Equals(EquatableDifferenceEntry<T>? other)
+        public bool Equals(EquatableDifferenceEntry<T, TU>? other)
         {
             if (ReferenceEquals(other, null))
             {
@@ -72,7 +75,7 @@ namespace DifferenceComparer.Model
             }
 
             // Remark: The Id comparison "should" be redundant!
-            if (Id != other.Id)
+            if (!Id.Equals(other.Id))
             {
                 return false;
             }
@@ -103,38 +106,46 @@ namespace DifferenceComparer.Model
                     : 0);
         }
 
-        public int Id => EntryIdEqualityComparer.GetHashCode(ExampleEntry);
+        public TU Id => EntryIdSelector(ExampleEntry);
         
-        public EquatableDifferenceEntry<T> Clone()
+        public EquatableDifferenceEntry<T, TU> Clone()
         {
-            return new EquatableDifferenceEntry<T>(EntryBefore, EntryAfter, EntryIdEqualityComparer, EntryEqualityComparer);
+            return new EquatableDifferenceEntry<T, TU>(
+                EntryBefore,
+                EntryAfter,
+                EntryIdSelector,
+                EntryEqualityComparer);
         }
 
-        public EquatableDifferenceEntry<EntryRef> GetTrivialEntryRefDifference()
+        public EquatableDifferenceEntry<EntryRef<TU>, TU> GetTrivialEntryRefDifference()
         {
-            return GetTrivialEntryRefDifference(EntryIdEqualityComparer);
+            return GetTrivialEntryRefDifference(EntryIdSelector);
         }
 
-        public EquatableDifferenceEntry<T> GetInverse()
+        public EquatableDifferenceEntry<T, TU> GetInverse()
         {
-            return new EquatableDifferenceEntry<T>(EntryAfter, EntryBefore, EntryIdEqualityComparer, EntryEqualityComparer);
+            return new EquatableDifferenceEntry<T, TU>(
+                EntryAfter,
+                EntryBefore,
+                EntryIdSelector,
+                EntryEqualityComparer);
         }
 
-        public static EquatableDifferenceEntry<T> FromDifferenceEntry(
+        public static EquatableDifferenceEntry<T, TU> FromDifferenceEntry(
             DifferenceEntry<T> differenceEntry,
-            IEqualityComparer<T> entryIdEqualityComparer,
+            Func<T, TU> entryIdSelector,
             IEqualityComparer<T>? entryEqualityComparer = null)
         {
             return new(
                 differenceEntry.EntryBefore,
                 differenceEntry.EntryAfter,
-                entryIdEqualityComparer,
+                entryIdSelector,
                 entryEqualityComparer);
         }
 
-        public static EquatableDifferenceEntry<T> JsonDeserialize(
+        public static EquatableDifferenceEntry<T, TU> JsonDeserialize(
             string json,
-            IEqualityComparer<T> entryIdEqualityComparer,
+            Func<T, TU> entryIdSelector,
             IEqualityComparer<T>? entryEqualityComparer = null,
             JsonSerializerOptions? options = null)
         {
@@ -146,7 +157,7 @@ namespace DifferenceComparer.Model
 
             return FromDifferenceEntry(
                 differenceEntry,
-                entryIdEqualityComparer,
+                entryIdSelector,
                 entryEqualityComparer);
         }
     }

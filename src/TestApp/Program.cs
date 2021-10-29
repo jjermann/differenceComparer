@@ -26,8 +26,8 @@ namespace TestApp
                 TestDataGenerator.GetSimpleTestEntryList2().ToArray());
 
             // Create DifferenceComparer
-            var differenceComparer = new DifferenceComparer<SimpleTestEntry>(
-                new SimpleTestEntryIdEqualityComparer());
+            var differenceComparer = new DifferenceComparer<SimpleTestEntry, string>(
+                x => x.Id);
             
             // Normal / easy way to generate differences
             var difference = differenceComparer.GetDifference(
@@ -88,16 +88,14 @@ namespace TestApp
 
             // Note: Usually we don't compare arbitrary differences but if needed
             // one could do it by looping over all Ids:
-            var differenceIdEqualityComparer = new DifferenceEntryIdEqualityComparer<SimpleTestEntry>(
-                new SimpleTestEntryIdEqualityComparer());
             var differenceEqualityComparer = new DifferenceEntryEqualityComparer<SimpleTestEntry>();
             var squashedIdDictionary = squashedDifference
                 .ToDictionary(
-                    d => differenceIdEqualityComparer.GetHashCode(d),
+                    d => d.ExampleEntry.Id,
                     d => d);
             var difference02IdDictionary = difference02
                 .ToDictionary(
-                    d => differenceIdEqualityComparer.GetHashCode(d),
+                    d => d.ExampleEntry.Id,
                     d => d);
             var areIdsEqual = !squashedIdDictionary.Keys.Except(difference02IdDictionary.Keys).Any()
                               && !difference02IdDictionary.Keys.Except(squashedIdDictionary.Keys).Any();
@@ -109,8 +107,8 @@ namespace TestApp
             Debug.Assert(areEntriesEqual);
 
             // Or (more fun): We could use a difference DifferenceComparer...
-            var differenceDifferenceComparer = new DifferenceComparer<DifferenceEntry<SimpleTestEntry>>(
-                differenceIdEqualityComparer,
+            var differenceDifferenceComparer = new DifferenceComparer<DifferenceEntry<SimpleTestEntry>, string>(
+                x => x.ExampleEntry.Id,
                 differenceEqualityComparer);
             var differenceDifferenceForSquashed = differenceDifferenceComparer.GetDifference(
                 squashedDifference,

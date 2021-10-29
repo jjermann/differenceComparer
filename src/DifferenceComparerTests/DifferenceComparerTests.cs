@@ -26,7 +26,8 @@ namespace DifferenceComparerTests
             List<SimpleTestEntry> state1,
             List<SimpleTestEntry> state2)
         {
-            var differenceComparer = new DifferenceComparer<SimpleTestEntry>(new SimpleTestEntryIdEqualityComparer());
+            var differenceComparer = new DifferenceComparer<SimpleTestEntry, string>(
+                x => x.Id);
             var diff1 = differenceComparer.GetDifference(state0, state1);
             var diff2 = differenceComparer.GetDifference(state0, state2);
             var diff3 = differenceComparer.GetDifference(state1, state2);
@@ -70,7 +71,7 @@ namespace DifferenceComparerTests
             var stateArray = indexArray
                 .Select(i => SimpleStateList[i])
                 .ToArray();
-            var differenceComparer = new DifferenceComparer<SimpleTestEntry>(new SimpleTestEntryIdEqualityComparer());
+            var differenceComparer = new DifferenceComparer<SimpleTestEntry, string>(x => x.Id);
             var diffArray = Enumerable.Range(0, stateArray.Length - 1)
                 .Select(i => differenceComparer.GetDifference(stateArray[i], stateArray[i + 1]))
                 .ToArray();

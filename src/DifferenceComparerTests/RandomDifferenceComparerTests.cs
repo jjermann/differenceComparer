@@ -10,7 +10,7 @@ namespace DifferenceComparerTests
         [TestCase(30)]
         public void RandomDiff01ToDiff02ShouldCorrespondToDiff12Test(int n)
         {
-            var differenceComparer = new DifferenceComparer<SimpleTestEntry>(new SimpleTestEntryIdEqualityComparer());
+            var differenceComparer = new DifferenceComparer<SimpleTestEntry, string>(x => x.Id);
             var state0 = TestDataGenerator.GetRandomSimpleTestEntryList(n, 2*n);
             var state1 = TestDataGenerator.GetRandomSimpleTestEntryList(n, 2*n);
             var state2 = TestDataGenerator.GetRandomSimpleTestEntryList(n, 2*n);

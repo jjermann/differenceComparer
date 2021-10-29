@@ -6,14 +6,10 @@ using TestApp.TestData;
 
 namespace TestApp.Mocks
 {
-    public class SimpleDifferenceDbMock : DbMock<DifferenceEntry<SimpleTestEntry>>
+    public class SimpleDifferenceDbMock : DbMock<DifferenceEntry<SimpleTestEntry>, string>
     {
-        public static readonly IEqualityComparer<SimpleTestEntry> BaseEntryIdEqualityComparer =
-            new SimpleTestEntryIdEqualityComparer();
-
         public SimpleDifferenceDbMock()
-            : base(new DifferenceEntryIdEqualityComparer<SimpleTestEntry>(
-                BaseEntryIdEqualityComparer))
+            : base(x => x.ExampleEntry.Id)
         { }
 
         public static SimpleDifferenceDbMock InitializeFromCollection(params DifferenceEntry<SimpleTestEntry>[] entryArray)
@@ -34,11 +30,10 @@ namespace TestApp.Mocks
             return dbMock;
         }
 
-        public ICollection<EquatableDifferenceEntry<EntryRef>> GetAllDifferenceEntryRefs()
+        public ICollection<EquatableDifferenceEntry<EntryRef<string>, string>> GetAllDifferenceEntryRefs()
         {
             return EntryDictionary.Values
-                .Select(d => d.GetTrivialEntryRefDifference(
-                    BaseEntryIdEqualityComparer))
+                .Select(d => d.GetTrivialEntryRefDifference(x => x.Id))
                 .ToList();
         }
     }

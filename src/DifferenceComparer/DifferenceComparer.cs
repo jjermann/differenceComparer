@@ -6,16 +6,16 @@ using DifferenceComparer.Model;
 
 namespace DifferenceComparer
 {
-    public class DifferenceComparer<T>
+    public class DifferenceComparer<T, TU>
         where T: class
+        where TU: notnull
     {
-        public IEqualityComparer<T> EntryIdEqualityComparer { get; }
+        public Func<T, TU> EntryIdSelector { get; }
         public IEqualityComparer<T> EntryEqualityComparer { get; }
 
-        /// <param name="entryIdEqualityComparer">
-        /// EqualityComparer for the "Id".
-        /// Must correspond to an equivalence relation.
-        /// Must be a subclass of the equality equivalence relation.
+        /// <param name="entryIdSelector">
+        /// Selector for "Id".
+        /// The default EqualityComparer will be used.
         /// Business condition: Must uniquely identify entries in a given data collection.
         /// </param>
         /// <param name="equalityComparer">
@@ -25,10 +25,10 @@ namespace DifferenceComparer
         /// Business condition: Must distinguish data collection entries that have "changed".
         /// </param>
         public DifferenceComparer(
-            IEqualityComparer<T> entryIdEqualityComparer,
+            Func<T, TU> entryIdSelector,
             IEqualityComparer<T>? equalityComparer = null)
         {
-            EntryIdEqualityComparer = entryIdEqualityComparer;
+            EntryIdSelector = entryIdSelector;
             EntryEqualityComparer = equalityComparer ?? EqualityComparer<T>.Default;
         }
 
@@ -59,18 +59,18 @@ namespace DifferenceComparer
         }
 
 
-        public EquatableDifferenceEntry<T> ToEquatableDifferenceEntry(DifferenceEntry<T> differenceEntry)
+        public EquatableDifferenceEntry<T, TU> ToEquatableDifferenceEntry(DifferenceEntry<T> differenceEntry)
         {
-            return EquatableDifferenceEntry<T>.FromDifferenceEntry(
+            return EquatableDifferenceEntry<T, TU>.FromDifferenceEntry(
                 differenceEntry,
-                EntryIdEqualityComparer,
+                EntryIdSelector,
                 EntryEqualityComparer);
         }
 
         // Remark: Switched arguments give the inverse difference.
-        public List<EquatableDifferenceEntry<EntryRef>> GetEntryRefDifference(
-            in ICollection<int> col1,
-            in ICollection<int> col2)
+        public List<EquatableDifferenceEntry<EntryRef<TU>, TU>> GetEntryRefDifference(
+            in ICollection<TU> col1,
+            in ICollection<TU> col2)
         {
             var addIdHashSet = col2
                 .Except(col1)
@@ -82,26 +82,26 @@ namespace DifferenceComparer
                 .Intersect(col2)
                 .ToHashSet();
 
-            var differenceEntryList = new List<EquatableDifferenceEntry<EntryRef>>();
+            var differenceEntryList = new List<EquatableDifferenceEntry<EntryRef<TU>, TU>>();
             var addList = addIdHashSet
-                .Select(id => new EquatableDifferenceEntry<EntryRef>(
+                .Select(id => new EquatableDifferenceEntry<EntryRef<TU>, TU>(
                     null,
                     new(id, 2),
-                    EntryRef.IdEqualityComparer))
+                    x => x.Id))
                 .ToList();
             differenceEntryList.AddRange(addList);
             var deleteList = deleteIdHashSet
-                .Select(id => new EquatableDifferenceEntry<EntryRef>(
+                .Select(id => new EquatableDifferenceEntry<EntryRef<TU>, TU>(
                     new(id,1),
                     null,
-                    EntryRef.IdEqualityComparer))
+                    x => x.Id))
                 .ToList();
             differenceEntryList.AddRange(deleteList);
             var updateList = updateCandidateIdHashSet
-                .Select(id => new EquatableDifferenceEntry<EntryRef>(
+                .Select(id => new EquatableDifferenceEntry<EntryRef<TU>, TU>(
                     new(id,1),
                     new(id,2),
-                    EntryRef.IdEqualityComparer))
+                    x => x.Id))
                 .ToList();
             differenceEntryList.AddRange(updateList);
 
@@ -109,7 +109,7 @@ namespace DifferenceComparer
         }
 
         private DifferenceEntry<T>? GetDifferenceEntryFromEntryRefAndEntryPair(
-            in DifferenceEntry<EntryRef> refDifference,
+            in DifferenceEntry<EntryRef<TU>> refDifference,
             in T? entry1,
             in T? entry2)
         {
@@ -118,10 +118,10 @@ namespace DifferenceComparer
                 var entryAfter = refDifference.EntryAfter!.Index == 1
                     ? entry1!
                     : entry2!;
-                return new EquatableDifferenceEntry<T>(
+                return new EquatableDifferenceEntry<T, TU>(
                     null,
                     entryAfter,
-                    EntryIdEqualityComparer,
+                    EntryIdSelector,
                     EntryEqualityComparer);
             }
 
@@ -130,10 +130,10 @@ namespace DifferenceComparer
                 var entryBefore = refDifference.EntryBefore!.Index == 1
                     ? entry1!
                     : entry2!;
-                return new EquatableDifferenceEntry<T>(
+                return new EquatableDifferenceEntry<T, TU>(
                     entryBefore,
                     null,
-                    EntryIdEqualityComparer,
+                    EntryIdSelector,
                     EntryEqualityComparer);
             }
 
@@ -175,15 +175,15 @@ namespace DifferenceComparer
         /// The difference between collection 1 and 2.
         /// </returns>
         public List<DifferenceEntry<T>> GetDifference(
-            in ICollection<EquatableDifferenceEntry<EntryRef>> entryRefDifferenceCollection,
+            in ICollection<EquatableDifferenceEntry<EntryRef<TU>, TU>> entryRefDifferenceCollection,
             in IEnumerable<T> data1,
             in IEnumerable<T> data2)
         {
             // TODO: Use an enumerable mechanism from here on...
             var idDictionary1 = data1
-                .ToDictionary(e => EntryIdEqualityComparer.GetHashCode(e), e => e);
+                .ToDictionary(EntryIdSelector, e => e);
             var idDictionary2 = data2
-                .ToDictionary(e => EntryIdEqualityComparer.GetHashCode(e), e => e);
+                .ToDictionary(EntryIdSelector, e => e);
 
             var differenceEntryList = entryRefDifferenceCollection
                 .Select(d => GetDifferenceEntryFromEntryRefAndEntryPair(
@@ -204,10 +204,10 @@ namespace DifferenceComparer
             in ICollection<T> col2)
         {
             var idList1 = col1
-                .Select(e => EntryIdEqualityComparer.GetHashCode(e))
+                .Select(EntryIdSelector)
                 .ToList();
             var idList2 = col2
-                .Select(e => EntryIdEqualityComparer.GetHashCode(e))
+                .Select(EntryIdSelector)
                 .ToList();
             var entryRefDifferenceCollection = GetEntryRefDifference(idList1, idList2);
 
@@ -222,7 +222,7 @@ namespace DifferenceComparer
                 .GroupBy(d => d.Id)
                 .Any(g => g.Count() > 1))
             {
-                var msg = "List must be distinct (according to IdEqualityComparer)!";
+                var msg = "The id list must be distinct!";
                 throw new ArgumentException(msg);
             }
         }
@@ -253,11 +253,11 @@ namespace DifferenceComparer
             {
                 if (!differenceList1TypeIdDictionary.ContainsKey(differenceType))
                 {
-                    differenceList1TypeIdDictionary[differenceType] = new HashSet<int>();
+                    differenceList1TypeIdDictionary[differenceType] = new HashSet<TU>();
                 }
                 if (!differenceList2TypeIdDictionary.ContainsKey(differenceType))
                 {
-                    differenceList2TypeIdDictionary[differenceType] = new HashSet<int>();
+                    differenceList2TypeIdDictionary[differenceType] = new HashSet<TU>();
                 }
             }
 
@@ -327,11 +327,11 @@ namespace DifferenceComparer
             {
                 if (!differenceListBeforeTypeIdDictionary.ContainsKey(differenceType))
                 {
-                    differenceListBeforeTypeIdDictionary[differenceType] = new HashSet<int>();
+                    differenceListBeforeTypeIdDictionary[differenceType] = new HashSet<TU>();
                 }
                 if (!differenceListAfterTypeIdDictionary.ContainsKey(differenceType))
                 {
-                    differenceListAfterTypeIdDictionary[differenceType] = new HashSet<int>();
+                    differenceListAfterTypeIdDictionary[differenceType] = new HashSet<TU>();
                 }
             }
 
@@ -391,7 +391,7 @@ namespace DifferenceComparer
         // Remark: This method is not really symmetric (resp. switched arguments don't make sense).
         private DifferenceEntry<T>? GetUpdateDifference(in T entryBefore, in T entryAfter)
         {
-            if (EntryIdEqualityComparer.GetHashCode(entryBefore) != EntryIdEqualityComparer.GetHashCode(entryAfter))
+            if (!EntryIdSelector(entryBefore).Equals(EntryIdSelector(entryAfter)))
             {
                 throw new ArgumentException("The entries must have matching Id!");
             }
@@ -401,10 +401,10 @@ namespace DifferenceComparer
                 return null;
             }
 
-            return new EquatableDifferenceEntry<T>(
+            return new EquatableDifferenceEntry<T, TU>(
                 entryBefore,
                 entryAfter,
-                EntryIdEqualityComparer,
+                EntryIdSelector,
                 EntryEqualityComparer);
         }
 
@@ -420,9 +420,9 @@ namespace DifferenceComparer
         /// <returns>
         /// The EntryRef difference progression with a specific (technical) index.
         /// </returns>
-        public List<EquatableDifferenceEntry<EntryRef>> GetEntryRefDifferenceProgression(
-            in ICollection<EquatableDifferenceEntry<EntryRef>> entryRefDifferenceList1,
-            in ICollection<EquatableDifferenceEntry<EntryRef>> entryRefDifferenceList2)
+        public List<EquatableDifferenceEntry<EntryRef<TU>, TU>> GetEntryRefDifferenceProgression(
+            in ICollection<EquatableDifferenceEntry<EntryRef<TU>, TU>> entryRefDifferenceList1,
+            in ICollection<EquatableDifferenceEntry<EntryRef<TU>, TU>> entryRefDifferenceList2)
         {
             // TODO
             // Remark: If this is unwanted/inefficient it could be skipped.
@@ -438,11 +438,11 @@ namespace DifferenceComparer
             {
                 if (!differenceList1TypeIdDictionary.ContainsKey(differenceType))
                 {
-                    differenceList1TypeIdDictionary[differenceType] = new HashSet<int>();
+                    differenceList1TypeIdDictionary[differenceType] = new HashSet<TU>();
                 }
                 if (!differenceList2TypeIdDictionary.ContainsKey(differenceType))
                 {
-                    differenceList2TypeIdDictionary[differenceType] = new HashSet<int>();
+                    differenceList2TypeIdDictionary[differenceType] = new HashSet<TU>();
                 }
             }
 
@@ -453,26 +453,26 @@ namespace DifferenceComparer
             var delete2IdHashSet = differenceList2TypeIdDictionary[DifferenceType.Delete];
             var update2IdHashSet = differenceList2TypeIdDictionary[DifferenceType.Update];
 
-            var differenceEntryList = new List<EquatableDifferenceEntry<EntryRef>>();
+            var differenceEntryList = new List<EquatableDifferenceEntry<EntryRef<TU>, TU>>();
 
             // Add
             var addList1 = add2IdHashSet.Except(add1IdHashSet)
-                .Select(id => new EquatableDifferenceEntry<EntryRef>(
+                .Select(id => new EquatableDifferenceEntry<EntryRef<TU>, TU>(
                         null,
                         new(id, (int)EntryRefDifferenceIndex.EntryAfterFromSecond),
-                        EntryRef.IdEqualityComparer))
+                        x => x.Id))
                 .ToList();
             var addList2 = delete1IdHashSet.Except(delete2IdHashSet).Except(update2IdHashSet)
-                .Select(id => new EquatableDifferenceEntry<EntryRef>(
+                .Select(id => new EquatableDifferenceEntry<EntryRef<TU>, TU>(
                     null,
                     new(id, (int)EntryRefDifferenceIndex.EntryBeforeFromFirst),
-                    EntryRef.IdEqualityComparer))
+                    x => x.Id))
                 .ToList();
             var addList3 = (delete1IdHashSet.Except(delete2IdHashSet)).Intersect(update2IdHashSet)
-                .Select(id => new EquatableDifferenceEntry<EntryRef>(
+                .Select(id => new EquatableDifferenceEntry<EntryRef<TU>, TU>(
                     null,
                     new(id, (int)EntryRefDifferenceIndex.EntryAfterFromSecond),
-                    EntryRef.IdEqualityComparer))
+                    x => x.Id))
                 .ToList();
             differenceEntryList.AddRange(addList1);
             differenceEntryList.AddRange(addList2);
@@ -480,38 +480,38 @@ namespace DifferenceComparer
 
             // Delete
             var delList1 = delete2IdHashSet.Except(delete1IdHashSet)
-                .Select(id => new EquatableDifferenceEntry<EntryRef>(
+                .Select(id => new EquatableDifferenceEntry<EntryRef<TU>, TU>(
                     new(id, (int)EntryRefDifferenceIndex.EntryBeforeFromSecond),
                     null,
-                    EntryRef.IdEqualityComparer))
+                    x => x.Id))
                 .ToList();
             var delList2 = add1IdHashSet.Except(add2IdHashSet)
-                .Select(id => new EquatableDifferenceEntry<EntryRef>(
+                .Select(id => new EquatableDifferenceEntry<EntryRef<TU>, TU>(
                     new(id, (int)EntryRefDifferenceIndex.EntryAfterFromFirst),
                     null,
-                    EntryRef.IdEqualityComparer))
+                    x => x.Id))
                 .ToList();
             differenceEntryList.AddRange(delList1);
             differenceEntryList.AddRange(delList2);
 
             // Update
             var updateList1 = add2IdHashSet.Intersect(add1IdHashSet)
-                .Select(id => new EquatableDifferenceEntry<EntryRef>(
+                .Select(id => new EquatableDifferenceEntry<EntryRef<TU>, TU>(
                     new(id, (int)EntryRefDifferenceIndex.EntryAfterFromFirst),
                     new(id, (int)EntryRefDifferenceIndex.EntryAfterFromSecond),
-                    EntryRef.IdEqualityComparer))
+                    x => x.Id))
                 .ToList();
             var updateList2 = update2IdHashSet.Except(update1IdHashSet.Union(delete1IdHashSet))
-                .Select(id => new EquatableDifferenceEntry<EntryRef>(
+                .Select(id => new EquatableDifferenceEntry<EntryRef<TU>, TU>(
                     new(id, (int)EntryRefDifferenceIndex.EntryBeforeFromSecond),
                     new(id, (int)EntryRefDifferenceIndex.EntryAfterFromSecond),
-                    EntryRef.IdEqualityComparer))
+                    x => x.Id))
                 .ToList();
             var updateList3 = update2IdHashSet.Union(update1IdHashSet).Except(delete1IdHashSet.Union(delete2IdHashSet))
-                .Select(id => new EquatableDifferenceEntry<EntryRef>(
+                .Select(id => new EquatableDifferenceEntry<EntryRef<TU>, TU>(
                     new(id, (int)EntryRefDifferenceIndex.EntryAfterFromFirst),
                     new(id, (int)EntryRefDifferenceIndex.EntryAfterFromSecond),
-                    EntryRef.IdEqualityComparer))
+                    x => x.Id))
                 .ToList();
             differenceEntryList.AddRange(updateList1);
             differenceEntryList.AddRange(updateList2);
@@ -521,7 +521,7 @@ namespace DifferenceComparer
         }
 
         private DifferenceEntry<T>? GetDifferenceEntryFromEntryRefAndDifferenceEntryPair(
-            in DifferenceEntry<EntryRef> refDifference,
+            in DifferenceEntry<EntryRef<TU>> refDifference,
             in DifferenceEntry<T>? entry1,
             in DifferenceEntry<T>? entry2)
         {
@@ -547,10 +547,10 @@ namespace DifferenceComparer
                     entry1,
                     entry2);
 
-                return new EquatableDifferenceEntry<T>(
+                return new EquatableDifferenceEntry<T, TU>(
                     null,
                     entryAfter,
-                    EntryIdEqualityComparer,
+                    EntryIdSelector,
                     EntryEqualityComparer);
             }
 
@@ -561,10 +561,10 @@ namespace DifferenceComparer
                     entry1,
                     entry2);
 
-                return new EquatableDifferenceEntry<T>(
+                return new EquatableDifferenceEntry<T, TU>(
                     entryBefore,
                     null,
-                    EntryIdEqualityComparer,
+                    EntryIdSelector,
                     EntryEqualityComparer);
             }
 
@@ -606,7 +606,7 @@ namespace DifferenceComparer
         /// The difference progression from difference 1 to difference 2.
         /// </returns>
         public List<DifferenceEntry<T>> GetDifferenceProgression(
-            in ICollection<EquatableDifferenceEntry<EntryRef>> entryRefDifferenceCollection,
+            in ICollection<EquatableDifferenceEntry<EntryRef<TU>, TU>> entryRefDifferenceCollection,
             in IEnumerable<DifferenceEntry<T>> differenceData1,
             in IEnumerable<DifferenceEntry<T>> differenceData2)
         {
@@ -685,11 +685,11 @@ namespace DifferenceComparer
             {
                 if (!differenceListBeforeTypeIdDictionary.ContainsKey(differenceType))
                 {
-                    differenceListBeforeTypeIdDictionary[differenceType] = new HashSet<int>();
+                    differenceListBeforeTypeIdDictionary[differenceType] = new HashSet<TU>();
                 }
                 if (!differenceListAfterTypeIdDictionary.ContainsKey(differenceType))
                 {
-                    differenceListAfterTypeIdDictionary[differenceType] = new HashSet<int>();
+                    differenceListAfterTypeIdDictionary[differenceType] = new HashSet<TU>();
                 }
             }
 
@@ -707,10 +707,10 @@ namespace DifferenceComparer
                 .Select(id => differenceListBeforeIdDictionary[id].Clone())
                 .ToList();
             var addList12 = addBeforeIdHashSet.Except(deleteAfterIdHashSet).Intersect(updateAfterIdHashSet)
-                .Select(id => new EquatableDifferenceEntry<T>(
+                .Select(id => new EquatableDifferenceEntry<T, TU>(
                     null,
                     differenceListAfterIdDictionary[id].EntryAfter,
-                    EntryIdEqualityComparer,
+                    EntryIdSelector,
                     EntryEqualityComparer))
                 .ToList();
             var addList2 = addAfterIdHashSet.Except(deleteBeforeIdHashSet)
@@ -728,10 +728,10 @@ namespace DifferenceComparer
                 .Select(id => differenceListAfterIdDictionary[id].Clone())
                 .ToList();
             var delList22 = deleteAfterIdHashSet.Except(addBeforeIdHashSet).Intersect(updateBeforeIdHashSet)
-                .Select(id => new EquatableDifferenceEntry<T>(
+                .Select(id => new EquatableDifferenceEntry<T, TU>(
                     differenceListBeforeIdDictionary[id].EntryBefore,
                     null,
-                    EntryIdEqualityComparer,
+                    EntryIdSelector,
                     EntryEqualityComparer))
                 .ToList();
             differenceEntryList.AddRange(delList1);

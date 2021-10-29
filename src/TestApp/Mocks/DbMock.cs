@@ -10,24 +10,25 @@ namespace TestApp.Mocks
     /// Memory DB Mock.
     /// Warning: No clones are used, entries are returned directly.
     /// </summary>
-    public class DbMock<T>
+    public class DbMock<T, TU>
         where T : class
+        where TU : notnull
     {
-        protected readonly IEqualityComparer<T> IdEqualityComparer;
-        protected readonly IDictionary<int, T> EntryDictionary;
+        protected readonly Func<T, TU> EntryIdSelector;
+        protected readonly IDictionary<TU, T> EntryDictionary;
 
-        public DbMock(IEqualityComparer<T> idEqualityComparer)
+        public DbMock(Func<T, TU> entryIdSelector)
         {
-            IdEqualityComparer = idEqualityComparer;
-            EntryDictionary = new Dictionary<int, T>();
+            EntryIdSelector = entryIdSelector;
+            EntryDictionary = new Dictionary<TU, T>();
         }
 
-        public static DbMock<T> InitializeFromJson(
-            IEqualityComparer<T> entryIdEqualityComparer,
+        public static DbMock<T, TU> InitializeFromJson(
+            Func<T, TU> entryIdSelector,
             string json,
             JsonSerializerOptions? options = null)
         {
-            var dbMock = new DbMock<T>(entryIdEqualityComparer);
+            var dbMock = new DbMock<T, TU>(entryIdSelector);
             dbMock.AddFromJson(json, options);
 
             return dbMock;
@@ -65,7 +66,7 @@ namespace TestApp.Mocks
             }
         }
 
-        public IEnumerable<T> GetAllEnumerableByIdList(IList<int> idList)
+        public IEnumerable<T> GetAllEnumerableByIdList(IList<TU> idList)
         {
             foreach (var entry in idList
                 .Select(id => EntryDictionary[id]))
@@ -79,19 +80,19 @@ namespace TestApp.Mocks
             return EntryDictionary.Values.ToList();
         }
 
-        public IList<T> GetAllByIdList(IList<int> idList)
+        public IList<T> GetAllByIdList(IList<TU> idList)
         {
             return idList
                 .Select(id => EntryDictionary[id])
                 .ToList();
         }
 
-        public HashSet<int> GetAllIds()
+        public HashSet<TU> GetAllIds()
         {
             return EntryDictionary.Keys.ToHashSet();
         }
 
-        public T Get(int id)
+        public T Get(TU id)
         {
             return EntryDictionary[id];
         }
@@ -143,7 +144,7 @@ namespace TestApp.Mocks
             return entryArray.Length;
         }
 
-        public int Delete(params int[] idArray)
+        public int Delete(params TU[] idArray)
         {
             foreach (var id in idArray)
             {
@@ -168,7 +169,7 @@ namespace TestApp.Mocks
             return count;
         }
 
-        public int ApplyDifference(params EquatableDifferenceEntry<T>[] differenceArray)
+        public int ApplyDifference(params EquatableDifferenceEntry<T, TU>[] differenceArray)
         {
             var count = 0;
 
@@ -199,9 +200,9 @@ namespace TestApp.Mocks
             return count;
         }
 
-        private int GetId(T entry)
+        private TU GetId(T entry)
         {
-            return IdEqualityComparer.GetHashCode(entry);
+            return EntryIdSelector(entry);
         }
     }
 }

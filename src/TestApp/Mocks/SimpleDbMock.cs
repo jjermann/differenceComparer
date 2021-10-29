@@ -3,9 +3,9 @@ using TestApp.TestData;
 
 namespace TestApp.Mocks
 {
-    public class SimpleDbMock : DbMock<SimpleTestEntry>
+    public class SimpleDbMock : DbMock<SimpleTestEntry, string>
     {
-        public SimpleDbMock(): base(new SimpleTestEntryIdEqualityComparer())
+        public SimpleDbMock(): base(x => x.Id)
         { }
 
         public static SimpleDbMock InitializeFromCollection(params SimpleTestEntry[] entryArray)
