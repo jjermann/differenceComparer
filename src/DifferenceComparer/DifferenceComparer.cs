@@ -214,6 +214,18 @@ namespace DifferenceComparer
             return GetDifference(entryRefDifferenceCollection, col1, col2);
         }
 
+        private void ValidateEntryRefDifferenceList(
+            in ICollection<EquatableDifferenceEntry<EntryRef<TU>, TU>> entryRefDifferenceCollection)
+        {
+            if (entryRefDifferenceCollection
+                .GroupBy(d => d.Id)
+                .Any(g => g.Count() > 1))
+            {
+                var msg = "The id list must be distinct!";
+                throw new ArgumentException(msg);
+            }
+        }
+
         private void ValidateDifferenceList(
             in ICollection<DifferenceEntry<T>> differenceCollection)
         {
@@ -223,6 +235,76 @@ namespace DifferenceComparer
                 .Any(g => g.Count() > 1))
             {
                 var msg = "The id list must be distinct!";
+                throw new ArgumentException(msg);
+            }
+        }
+
+        // Remark: This method is symmetric.
+        private void ValidateEntryRefDifferenceProgression(
+            in ICollection<EquatableDifferenceEntry<EntryRef<TU>, TU>> entryRefDifferenceCollection1,
+            in ICollection<EquatableDifferenceEntry<EntryRef<TU>, TU>> entryRefDifferenceCollection2)
+        {
+            ValidateEntryRefDifferenceList(entryRefDifferenceCollection1);
+            ValidateEntryRefDifferenceList(entryRefDifferenceCollection2);
+
+            var differenceList1IdDictionary = entryRefDifferenceCollection1
+                .ToDictionary(d => d.Id, d => d);
+            var differenceList2IdDictionary = entryRefDifferenceCollection2
+                .ToDictionary(d => d.Id, d => d);
+            var differenceList1TypeIdDictionary = entryRefDifferenceCollection1
+                .GroupBy(d => d.DifferenceType)
+                .ToDictionary(g => g.Key, g => g.Select(d => d.Id).ToHashSet());
+            var differenceList2TypeIdDictionary = entryRefDifferenceCollection2
+                .GroupBy(d => d.DifferenceType)
+                .ToDictionary(g => g.Key, g => g.Select(d => d.Id).ToHashSet());
+            foreach (var differenceType in Enum.GetValues<DifferenceType>())
+            {
+                if (!differenceList1TypeIdDictionary.ContainsKey(differenceType))
+                {
+                    differenceList1TypeIdDictionary[differenceType] = new HashSet<TU>();
+                }
+                if (!differenceList2TypeIdDictionary.ContainsKey(differenceType))
+                {
+                    differenceList2TypeIdDictionary[differenceType] = new HashSet<TU>();
+                }
+            }
+
+            var add1IdHashSet = differenceList1TypeIdDictionary[DifferenceType.Add];
+            var delete1IdHashSet = differenceList1TypeIdDictionary[DifferenceType.Delete];
+            var update1IdHashSet = differenceList1TypeIdDictionary[DifferenceType.Update];
+            var add2IdHashSet = differenceList2TypeIdDictionary[DifferenceType.Add];
+            var delete2IdHashSet = differenceList2TypeIdDictionary[DifferenceType.Delete];
+            var update2IdHashSet = differenceList2TypeIdDictionary[DifferenceType.Update];
+            var deleteInBothIdHashSet = delete1IdHashSet
+                .Intersect(delete2IdHashSet)
+                .ToHashSet();
+            var updateInBothIdHashSet = update1IdHashSet
+                .Intersect(update2IdHashSet)
+                .ToHashSet();
+
+            if (add1IdHashSet.Intersect(delete2IdHashSet).Any()
+                || add2IdHashSet.Intersect(delete1IdHashSet).Any())
+            {
+                var msg = "Inconsistency: Can't Add for one difference and Delete for the other difference!";
+                throw new ArgumentException(msg);
+            }
+
+            if (add1IdHashSet.Intersect(update2IdHashSet).Any()
+                || add2IdHashSet.Intersect(update1IdHashSet).Any())
+            {
+                var msg = "Inconsistency: Can't Add for one difference and Update for the other difference!";
+                throw new ArgumentException(msg);
+            }
+
+            if (deleteInBothIdHashSet.Any(id => !differenceList1IdDictionary[id].Equals(differenceList2IdDictionary[id])))
+            {
+                var msg = "Inconsistency: Can't have unequal Delete differences for the same Id!";
+                throw new ArgumentException(msg);
+            }
+
+            if (updateInBothIdHashSet.Any(id => !differenceList1IdDictionary[id].Equals(differenceList2IdDictionary[id])))
+            {
+                var msg = "Inconsistency: Can't have unequal Update differences for the same Id!";
                 throw new ArgumentException(msg);
             }
         }
@@ -424,9 +506,8 @@ namespace DifferenceComparer
             in ICollection<EquatableDifferenceEntry<EntryRef<TU>, TU>> entryRefDifferenceList1,
             in ICollection<EquatableDifferenceEntry<EntryRef<TU>, TU>> entryRefDifferenceList2)
         {
-            // TODO
             // Remark: If this is unwanted/inefficient it could be skipped.
-            //ValidateDifferenceProgression(differenceCollection1, differenceCollection2);
+            ValidateEntryRefDifferenceProgression(entryRefDifferenceList1, entryRefDifferenceList2);
 
             var differenceList1TypeIdDictionary = entryRefDifferenceList1
                 .GroupBy(d => d.DifferenceType)
@@ -637,7 +718,6 @@ namespace DifferenceComparer
             in ICollection<DifferenceEntry<T>> differenceList2)
         {
             // Remark: If this is unwanted/inefficient it could be skipped.
-            // TODO: Move/Copy parts of the validation to the methods above!
             ValidateDifferenceProgression(differenceList1, differenceList2);
 
             var entryRefDifferenceList1 = differenceList1

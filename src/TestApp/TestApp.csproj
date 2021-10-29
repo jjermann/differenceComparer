@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <IsPackable>false</IsPackable>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\DifferenceComparer\DifferenceComparer.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\DifferenceComparer\DifferenceComparer.csproj" />
+	</ItemGroup>
 
 </Project>
