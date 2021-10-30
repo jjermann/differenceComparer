@@ -34,7 +34,7 @@ namespace TestApp.Mocks
             return dbMock;
         }
 
-        public int AddFromJson(string json, JsonSerializerOptions? options = null)
+        public void AddFromJson(string json, JsonSerializerOptions? options = null)
         {
             var entryList = JsonSerializer.Deserialize<ICollection<T>>(json, options);
 
@@ -43,7 +43,7 @@ namespace TestApp.Mocks
                 throw new InvalidOperationException("Unable to deserialize collection!");
             }
 
-            return Add(entryList.ToArray());
+            Add(entryList.ToArray());
         }
 
         public string SerializeToJson(JsonSerializerOptions? options = null)
@@ -97,7 +97,7 @@ namespace TestApp.Mocks
             return EntryDictionary[id];
         }
 
-        public int Add(params T[] entryArray)
+        public void Add(params T[] entryArray)
         {
             foreach (var entry in entryArray)
             {
@@ -111,11 +111,9 @@ namespace TestApp.Mocks
 
                 EntryDictionary[id] = entry;
             }
-
-            return entryArray.Length;
         }
 
-        public int Update(params T[] entryArray)
+        public void Update(params T[] entryArray)
         {
             foreach (var entry in entryArray)
             {
@@ -129,22 +127,18 @@ namespace TestApp.Mocks
 
                 EntryDictionary[id] = entry;
             }
-
-            return entryArray.Length;
         }
 
-        public int AddOrUpdate(params T[] entryArray)
+        public void AddOrUpdate(params T[] entryArray)
         {
             foreach (var entry in entryArray)
             {
                 var id = GetId(entry);
                 EntryDictionary[id] = entry;
             }
-
-            return entryArray.Length;
         }
 
-        public int Delete(params TU[] idArray)
+        public void Delete(params TU[] idArray)
         {
             foreach (var id in idArray)
             {
@@ -156,8 +150,6 @@ namespace TestApp.Mocks
 
                 EntryDictionary.Remove(id);
             }
-
-            return idArray.Length;
         }
 
         public int Reset()
@@ -169,21 +161,19 @@ namespace TestApp.Mocks
             return count;
         }
 
-        public int ApplyDifference(params EquatableDifferenceEntry<T, TU>[] differenceArray)
+        public void ApplyDifference(params EquatableDifferenceEntry<T, TU>[] differenceArray)
         {
-            var count = 0;
-
             foreach (var differenceEntry in differenceArray)
             {
                 var id = differenceEntry.Id;
 
                 if (differenceEntry.DifferenceType == DifferenceType.Add)
                 {
-                    count += Add(differenceEntry.EntryAfter!);
+                    Add(differenceEntry.EntryAfter!);
                 }
                 else if (differenceEntry.DifferenceType == DifferenceType.Delete)
                 {
-                    count += Delete(id);
+                    Delete(id);
                 }
                 else
                 {
@@ -193,11 +183,9 @@ namespace TestApp.Mocks
                         throw new InvalidOperationException(msg);
                     }
 
-                    count += Update(differenceEntry.EntryAfter!);
+                    Update(differenceEntry.EntryAfter!);
                 }
             }
-
-            return count;
         }
 
         private TU GetId(T entry)
