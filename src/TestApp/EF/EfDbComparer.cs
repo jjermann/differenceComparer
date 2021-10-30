@@ -24,7 +24,7 @@ namespace TestApp.EF
                     .OrderBy(EntryIdSelector)
                     .Select(EntryIdSelector)
                     .ToList(),
-                state1
+                state2
                     .OrderBy(EntryIdSelector)
                     .Select(EntryIdSelector)
                     .ToList());

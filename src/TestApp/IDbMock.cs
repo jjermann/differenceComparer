@@ -2,7 +2,7 @@
 using System.Text.Json;
 using DifferenceComparer.Model;
 
-namespace TestApp.Mocks
+namespace TestApp
 {
     public interface IDbMock<T, TU>
         where T : class

@@ -23,11 +23,14 @@ namespace TestApp
             var dbMock2 = SimpleDbMock.InitializeFromCollection(data2);
             RunTests(dbMock0, dbMock1, dbMock2);
 
-            // EfSimpleDbMock tests
-            using var efDbMock0 = EfSimpleDbMock.InitializeFromCollection(data0);
-            using var efDbMock1 = EfSimpleDbMock.InitializeFromCollection(data1);
-            using var efDbMock2 = EfSimpleDbMock.InitializeFromCollection(data2);
-            RunTests(efDbMock0, efDbMock1, efDbMock2);
+            // EfSimpleInMemoryContext tests
+            using var efDb0 = EfSimpleInMemoryContext.InitializeFromCollection(data0);
+            using var efDb1 = EfSimpleInMemoryContext.InitializeFromCollection(data1);
+            using var efDb2 = EfSimpleInMemoryContext.InitializeFromCollection(data2);
+            RunTests(efDb0, efDb1, efDb2);
+
+            // EfDbComparer tests
+            RunEfDbComparerTests(efDb0, efDb1, efDb2);
         }
 
         // ReSharper disable UnusedVariable
@@ -132,6 +135,17 @@ namespace TestApp
                 difference12);
             var areDifferencesEqualForProgression = !differenceDifferenceForProgression.Any();
             Debug.Assert(areDifferencesEqualForProgression);
+        }
+
+        private static void RunEfDbComparerTests(
+            EfSimpleInMemoryContext efDb0,
+            EfSimpleInMemoryContext efDb1,
+            EfSimpleInMemoryContext efDb2)
+        {
+            var efDbComparer = new EfDbComparer<SimpleTestEntry, string>(x => x.Id);
+            var efDifference01 = efDbComparer.GetDbDifference(efDb0.EntrySet, efDb1.EntrySet);
+            var efDifference02 = efDbComparer.GetDbDifference(efDb0.EntrySet, efDb2.EntrySet);
+            var efDifference12 = efDbComparer.GetDbDifference(efDb1.EntrySet, efDb2.EntrySet);
         }
     }
 }

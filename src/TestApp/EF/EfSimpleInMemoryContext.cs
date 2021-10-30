@@ -5,28 +5,28 @@ using TestApp.TestData;
 
 namespace TestApp.EF
 {
-    public class EfSimpleDbMock : EfDbMock<SimpleTestEntry, string>
+    public class EfSimpleInMemoryContext : EfInMemoryContext<SimpleTestEntry, string>
     {
-        public EfSimpleDbMock(string? dbName = null)
+        public EfSimpleInMemoryContext(string? dbName = null)
             : base(x => x.Id, dbName)
         { }
 
-        public static EfSimpleDbMock InitializeFromCollection(
+        public static EfSimpleInMemoryContext InitializeFromCollection(
             ICollection<SimpleTestEntry> entryCollection,
             string? dbName = null)
         {
-            var dbMock = new EfSimpleDbMock(dbName);
+            var dbMock = new EfSimpleInMemoryContext(dbName);
             dbMock.Add(entryCollection.ToArray());
 
             return dbMock;
         }
 
-        public static EfSimpleDbMock InitializeFromJson(
+        public static EfSimpleInMemoryContext InitializeFromJson(
             string json,
             JsonSerializerOptions? options = null,
             string? dbName = null)
         {
-            var dbMock = new EfSimpleDbMock(dbName);
+            var dbMock = new EfSimpleInMemoryContext(dbName);
             dbMock.AddFromJson(json, options);
 
             return dbMock;

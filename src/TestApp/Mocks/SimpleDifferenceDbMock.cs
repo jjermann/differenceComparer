@@ -7,8 +7,11 @@ using TestApp.TestData;
 
 namespace TestApp.Mocks
 {
-    public class SimpleDifferenceDbMock : DbMock<DifferenceEntry<SimpleTestEntry>, string>
+    public class SimpleDifferenceDbMock
+        : DbMock<DifferenceEntry<SimpleTestEntry>, string>,
+            IDifferenceDbMock<SimpleTestEntry, string>
     {
+        // ReSharper disable once MemberCanBePrivate.Global
         public SimpleDifferenceDbMock()
             : base(x => x.ExampleEntry.Id)
         { }

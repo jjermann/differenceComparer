@@ -6,41 +6,40 @@ using System.Text.Json;
 using DifferenceComparer;
 using DifferenceComparer.Model;
 using Microsoft.EntityFrameworkCore;
-using TestApp.Mocks;
 
 namespace TestApp.EF
 {
     /// <summary>
     /// EF DbContext with an InMemoryDatabase.
     /// </summary>
-
     [SuppressMessage("ReSharper", "UnusedMember.Local")]
-    public class EfDbMock<T, TU> : DbContext, IDbMock<T, TU>
+    public class EfInMemoryContext<T, TU> : DbContext, IDbMock<T, TU>
         where T : class
         where TU : notnull
     {
         private const int ChunkSize = 1000;
-        private static readonly DbContextOptionsBuilder<EfDbMock<T, TU>> OptionsBuilder = new();
+        private static readonly DbContextOptionsBuilder<EfInMemoryContext<T, TU>> OptionsBuilder = new();
 
         public DbSet<T> EntrySet { get; set; } = null!;
 
         protected readonly Func<T, TU> EntryIdSelector;
 
-        public EfDbMock(Func<T, TU> entryIdSelector, string? dbName = null)
+        public EfInMemoryContext(Func<T, TU> entryIdSelector, string? dbName = null)
             : base(OptionsBuilder
-                .UseInMemoryDatabase(dbName ?? $"EfDbMock{Guid.NewGuid()}")
+                .UseInMemoryDatabase(dbName ?? $"EfInMemoryContext{Guid.NewGuid()}")
                 .Options)
         {
             EntryIdSelector = entryIdSelector;
         }
 
-        public static EfDbMock<T, TU> InitializeFromJson(
+        // ReSharper disable once UnusedMember.Global
+        public static EfInMemoryContext<T, TU> InitializeFromJson(
             Func<T, TU> entryIdSelector,
             string json,
             JsonSerializerOptions? options = null,
             string? dbName = null)
         {
-            var dbMock = new EfDbMock<T, TU>(entryIdSelector, dbName);
+            var dbMock = new EfInMemoryContext<T, TU>(entryIdSelector, dbName);
             dbMock.AddFromJson(json, options);
 
             return dbMock;
@@ -148,11 +147,6 @@ namespace TestApp.EF
                     Update(differenceEntry.EntryAfter!);
                 }
             }
-        }
-
-        private TU GetId(T entry)
-        {
-            return EntryIdSelector(entry);
         }
     }
 }
