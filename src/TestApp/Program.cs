@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using DifferenceComparer;
 using DifferenceComparer.Model;
@@ -13,9 +14,15 @@ namespace TestApp
         static void Main()
         {
             // Initialize data
-            var data0 = TestDataGenerator.GetSimpleTestEntryList0().ToArray();
-            var data1 = TestDataGenerator.GetSimpleTestEntryList1().ToArray();
-            var data2 = TestDataGenerator.GetSimpleTestEntryList2().ToArray();
+            var data = TestDataGenerator.GetSimpleTestEntryDictionary();
+            var data0 = data["db0.json"].ToArray();
+            var data1 = data["db1.json"].ToArray();
+            var data2 = data["db2.json"].ToArray();
+
+            // Alternative way:
+            //var data0 = TestDataGenerator.GetSimpleTestEntryList0().ToArray();
+            //var data1 = TestDataGenerator.GetSimpleTestEntryList1().ToArray();
+            //var data2 = TestDataGenerator.GetSimpleTestEntryList2().ToArray();
 
             // SimpleDbMock tests
             var dbMock0 = SimpleDbMock.InitializeFromCollection(data0);
@@ -31,6 +38,9 @@ namespace TestApp
 
             // EfDbComparer tests
             RunEfDbComparerTests(efDb0, efDb1, efDb2);
+
+            // Generate TestData
+            GenerateTestData();
         }
 
         // ReSharper disable UnusedVariable
@@ -169,6 +179,51 @@ namespace TestApp
                 efDifference12);
             var areDifferencesEqualForProgression = !differenceDifferenceForProgression.Any();
             Debug.Assert(areDifferencesEqualForProgression);
+        }
+
+        // Remark: This regenerates the existing .json files in TestData.
+        private static void GenerateTestData()
+        {
+            var testAppDirectory = new DirectoryInfo(".").Parent!.Parent!.Parent!.FullName;
+            var testDataDirectory = Path.Combine(testAppDirectory, "TestData");
+            var differenceComparer = new DifferenceComparer<SimpleTestEntry, string>(x => x.Id);
+            var dbMock0 = SimpleDbMock.InitializeFromCollection(TestDataGenerator.GetSimpleTestEntryList0().ToArray());
+            var dbMock1 = SimpleDbMock.InitializeFromCollection(TestDataGenerator.GetSimpleTestEntryList1().ToArray());
+            var dbMock2 = SimpleDbMock.InitializeFromCollection(TestDataGenerator.GetSimpleTestEntryList2().ToArray());
+            var dbMock3 = SimpleDbMock.InitializeFromCollection(TestDataGenerator.GetSimpleTestEntryList3().ToArray());
+            var diffDb01 = differenceComparer.GetDifference(dbMock0.GetAll(), dbMock1.GetAll());
+            var diffDb02 = differenceComparer.GetDifference(dbMock0.GetAll(), dbMock2.GetAll());
+            var diffDb03 = differenceComparer.GetDifference(dbMock0.GetAll(), dbMock3.GetAll());
+            var diffDb12 = differenceComparer.GetDifference(dbMock1.GetAll(), dbMock2.GetAll());
+            var diffDb23 = differenceComparer.GetDifference(dbMock2.GetAll(), dbMock3.GetAll());
+
+            File.WriteAllText(
+                Path.Combine(testDataDirectory, "SimpleTestEntry", "db0.json"),
+                dbMock0.SerializeToJson());
+            File.WriteAllText(
+                Path.Combine(testDataDirectory, "SimpleTestEntry", "db1.json"),
+                dbMock1.SerializeToJson());
+            File.WriteAllText(
+                Path.Combine(testDataDirectory, "SimpleTestEntry", "db2.json"),
+                dbMock2.SerializeToJson());
+            File.WriteAllText(
+                Path.Combine(testDataDirectory, "SimpleTestEntry", "db3.json"),
+                dbMock3.SerializeToJson());
+            File.WriteAllText(
+                Path.Combine(testDataDirectory, "SimpleTestEntryDifference", "diffDb01.json"),
+                differenceComparer.SerializeDifference(diffDb01));
+            File.WriteAllText(
+                Path.Combine(testDataDirectory, "SimpleTestEntryDifference", "diffDb02.json"),
+                differenceComparer.SerializeDifference(diffDb02));
+            File.WriteAllText(
+                Path.Combine(testDataDirectory, "SimpleTestEntryDifference", "diffDb03.json"),
+                differenceComparer.SerializeDifference(diffDb03));
+            File.WriteAllText(
+                Path.Combine(testDataDirectory, "SimpleTestEntryDifference", "diffDb12.json"),
+                differenceComparer.SerializeDifference(diffDb12));
+            File.WriteAllText(
+                Path.Combine(testDataDirectory, "SimpleTestEntryDifference", "diffDb23.json"),
+                differenceComparer.SerializeDifference(diffDb23));
         }
     }
 }

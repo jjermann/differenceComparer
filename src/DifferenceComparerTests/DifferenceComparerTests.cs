@@ -9,18 +9,19 @@ namespace DifferenceComparerTests
 {
     public class DifferenceComparerTests
     {
-        private static readonly List<SimpleTestEntry>[] SimpleStateList = TestDataGenerator.GetSimpleTestEntryListArray();
-        private static object[] _simpleStateTripletData =
+        private static readonly Dictionary<string, ICollection<SimpleTestEntry>> SimpleDictionary = 
+            TestDataGenerator.GetSimpleTestEntryDictionary();
+        private static readonly object[] SimpleStateTripletData =
         {
             new []
             {
-                SimpleStateList[0],
-                SimpleStateList[1],
-                SimpleStateList[2]
+                SimpleDictionary["db0.json"],
+                SimpleDictionary["db1.json"],
+                SimpleDictionary["db2.json"]
             }
         };
 
-        [TestCaseSource(nameof(_simpleStateTripletData))]
+        [TestCaseSource(nameof(SimpleStateTripletData))]
         public void Diff01ToDiff02ShouldCorrespondToDiff12Test(
             List<SimpleTestEntry> state0,
             List<SimpleTestEntry> state1,
@@ -69,7 +70,7 @@ namespace DifferenceComparerTests
         public void GetSquashDifferenceTest(params int[] indexArray)
         {
             var stateArray = indexArray
-                .Select(i => SimpleStateList[i])
+                .Select(i => SimpleDictionary.Values.ToList()[i])
                 .ToArray();
             var differenceComparer = new DifferenceComparer<SimpleTestEntry, string>(x => x.Id);
             var diffArray = Enumerable.Range(0, stateArray.Length - 1)

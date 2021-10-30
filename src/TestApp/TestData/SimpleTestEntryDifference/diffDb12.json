@@ -1,0 +1,24 @@
+[
+  {
+    "Id": "1B",
+    "EntryBefore": {
+      "Id": "1B",
+      "ColumnA": "111",
+      "ColumnB": "2",
+      "ColumnC": "A"
+    },
+    "EntryAfter": null,
+    "DifferenceType": "Delete"
+  },
+  {
+    "Id": "2A",
+    "EntryBefore": null,
+    "EntryAfter": {
+      "Id": "2A",
+      "ColumnA": "222",
+      "ColumnB": "1",
+      "ColumnC": "B"
+    },
+    "DifferenceType": "Add"
+  }
+]

@@ -1,0 +1,56 @@
+[
+  {
+    "Id": "1A",
+    "EntryBefore": {
+      "Id": "1A",
+      "ColumnA": "111",
+      "ColumnB": "1",
+      "ColumnC": "B"
+    },
+    "EntryAfter": null,
+    "DifferenceType": "Delete"
+  },
+  {
+    "Id": "1B",
+    "EntryBefore": {
+      "Id": "1B",
+      "ColumnA": "111",
+      "ColumnB": "2",
+      "ColumnC": "A"
+    },
+    "EntryAfter": {
+      "Id": "1B",
+      "ColumnA": "222",
+      "ColumnB": "2",
+      "ColumnC": "B"
+    },
+    "DifferenceType": "Update"
+  },
+  {
+    "Id": "2A",
+    "EntryBefore": {
+      "Id": "2A",
+      "ColumnA": "222",
+      "ColumnB": "1",
+      "ColumnC": "A"
+    },
+    "EntryAfter": {
+      "Id": "2A",
+      "ColumnA": "222",
+      "ColumnB": "2",
+      "ColumnC": "A"
+    },
+    "DifferenceType": "Update"
+  },
+  {
+    "Id": "2B",
+    "EntryBefore": null,
+    "EntryAfter": {
+      "Id": "2B",
+      "ColumnA": "111",
+      "ColumnB": "1",
+      "ColumnC": "A"
+    },
+    "DifferenceType": "Add"
+  }
+]

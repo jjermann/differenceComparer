@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
+using DifferenceComparer.Model;
 
 namespace TestApp.TestData
 {
@@ -46,15 +49,26 @@ namespace TestApp.TestData
             };
         }
 
-        public static List<SimpleTestEntry>[] GetSimpleTestEntryListArray()
+        public static Dictionary<string, ICollection<SimpleTestEntry>> GetSimpleTestEntryDictionary()
         {
-            return new[]
-            {
-                GetSimpleTestEntryList0(),
-                GetSimpleTestEntryList1(),
-                GetSimpleTestEntryList2(),
-                GetSimpleTestEntryList3()
-            };
+            var dictionary = Directory.GetFiles(Path.Combine("TestData", "SimpleTestEntry"))
+                .Select(f => new FileInfo(f))
+                .ToDictionary(
+                    f => f.Name,
+                    f => JsonSerializer.Deserialize<ICollection<SimpleTestEntry>>(File.ReadAllText(f.FullName))!);
+
+            return dictionary;
+        }
+
+        public static Dictionary<string, ICollection<DifferenceEntry<SimpleTestEntry, string>>> GetSimpleTestEntryDifferenceDictionary()
+        {
+            var dictionary = Directory.GetFiles(Path.Combine("TestData", "SimpleTestEntryDifference"))
+                .Select(f => new FileInfo(f))
+                .ToDictionary(
+                    f => f.Name,
+                    f => JsonSerializer.Deserialize<ICollection<DifferenceEntry<SimpleTestEntry, string>>>(File.ReadAllText(f.FullName))!);
+
+            return dictionary;
         }
 
         private static List<SimpleTestEntry> GetEntryTemplateList(int n)

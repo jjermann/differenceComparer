@@ -1,0 +1,20 @@
+[
+  {
+    "Id": "1B",
+    "ColumnA": "222",
+    "ColumnB": "2",
+    "ColumnC": "B"
+  },
+  {
+    "Id": "2A",
+    "ColumnA": "222",
+    "ColumnB": "2",
+    "ColumnC": "A"
+  },
+  {
+    "Id": "2B",
+    "ColumnA": "111",
+    "ColumnB": "1",
+    "ColumnC": "A"
+  }
+]
