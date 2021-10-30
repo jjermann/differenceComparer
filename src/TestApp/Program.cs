@@ -39,6 +39,9 @@ namespace TestApp
             // EfDbComparer tests
             RunEfDbComparerTests(efDb0, efDb1, efDb2);
 
+            // Tests with large databases
+            RunEfLargeDataTests();
+
             // Generate TestData
             GenerateTestData();
         }
@@ -179,6 +182,58 @@ namespace TestApp
                 efDifference12);
             var areDifferencesEqualForProgression = !differenceDifferenceForProgression.Any();
             Debug.Assert(areDifferencesEqualForProgression);
+        }
+
+        private static void RunEfLargeDataTests()
+        {
+            var largeStringA = new string('A', 1000);
+            var largeStringB = new string('B', 1000);
+            var largeStringC = new string('C', 1000);
+            var testEntryArray1 = Enumerable.Range(0, 100000)
+                .Select(i => new SimpleTestEntry(
+                    i.ToString(),
+                    $"{largeStringA}{i}",
+                    $"{largeStringB}{i}",
+                    $"{largeStringC}{i}"))
+                .ToArray();
+            var testEntryArray2 = Enumerable.Range(0, 100000)
+                .Select(i => new SimpleTestEntry(
+                    i.ToString(),
+                    $"{largeStringA}{i}",
+                    $"{largeStringB}{i}",
+                    $"{largeStringC}{i}"))
+                .ToArray();
+            for (var i = 0; i < 200; i++)
+            {
+                testEntryArray2[i * i] = testEntryArray2[i * i] with { ColumnA = $"NewA{i * i}" };
+                testEntryArray2[i * 500] = testEntryArray2[i * 500] with { ColumnB = $"NewB{i * 500}" };
+                testEntryArray2[i * 500 + 1] = testEntryArray2[i * 500 + 1] with { Id = $"NewId{i * 500 + 1}" };
+            }
+            testEntryArray2[42] = testEntryArray2[42] with { ColumnC = "42" };
+            var testEntryArray0 = new []
+            {
+                testEntryArray1[0] with { ColumnA = "Change1" },
+                testEntryArray1[30000] with { ColumnB = "Change2" },
+                testEntryArray1[42] with { ColumnC = "Change3" },
+                testEntryArray1[3] with { Id = "ChangeId" }
+            };
+
+            using var efDb0 = new EfSimpleInMemoryContext();
+            using var efDb1 = new EfSimpleInMemoryContext();
+            using var efDb2 = new EfSimpleInMemoryContext();
+            efDb0.Add(testEntryArray0);
+            efDb1.Add(testEntryArray1);
+            efDb2.Add(testEntryArray2);
+
+            var efDbComparer = new EfDbComparer<SimpleTestEntry, string>(x => x.Id);
+            var efDiff12 = efDbComparer.GetDbDifference(efDb1.EntrySet, efDb2.EntrySet);
+            var efDiff01 = efDbComparer.GetDbDifference(efDb0.EntrySet, efDb1.EntrySet);
+            var efDiff02 = efDbComparer.GetDbDifference(efDb0.EntrySet, efDb2.EntrySet);
+            //var diffProgression = efDbComparer.GetDifferenceProgression(diff01, diff02);
+            var differenceComparer = new DifferenceComparer<SimpleTestEntry, string>(x => x.Id);
+            var diff12 = differenceComparer.GetDifference(efDb1.GetAll(), efDb2.GetAll());
+            var diff01 = differenceComparer.GetDifference(efDb0.GetAll(), efDb1.GetAll());
+            var diff02 = differenceComparer.GetDifference(efDb0.GetAll(), efDb2.GetAll());
         }
 
         // Remark: This regenerates the existing .json files in TestData.
