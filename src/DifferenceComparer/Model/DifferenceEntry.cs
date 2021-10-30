@@ -50,16 +50,6 @@ namespace DifferenceComparer.Model
         [NotNull]
         public T ExampleEntry => EntryBefore ?? EntryAfter!;
 
-        public EntryRefDifference<TU> GetTrivialEntryRefDifference<TU>(
-            Func<T, TU> entryIdSelector)
-            where TU: notnull
-        {
-            return new EntryRefDifference<TU>(
-                entryIdSelector(ExampleEntry),
-                EntryBefore != null ? 0 : null,
-                EntryAfter != null ? 0 : null);
-        }
-
         public override string ToString()
         {
             return JsonSerializer.Serialize(this, new JsonSerializerOptions

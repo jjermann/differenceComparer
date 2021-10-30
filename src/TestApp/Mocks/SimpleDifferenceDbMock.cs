@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
+using DifferenceComparer;
 using DifferenceComparer.Model;
 using TestApp.TestData;
 
@@ -33,7 +34,7 @@ namespace TestApp.Mocks
         public ICollection<EntryRefDifference<string>> GetAllEntryRefDifferences()
         {
             return EntryDictionary.Values
-                .Select(d => d.GetTrivialEntryRefDifference(x => x.Id))
+                .Select(d => d.ToTrivialEntryRefDifference(x => x.Id))
                 .ToList();
         }
     }

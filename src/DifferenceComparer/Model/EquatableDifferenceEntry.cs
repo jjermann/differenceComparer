@@ -10,8 +10,8 @@ namespace DifferenceComparer.Model
         where T : class
         where TU : notnull
     {
-        private Func<T, TU> EntryIdSelector { get; }
-        private IEqualityComparer<T> EntryEqualityComparer { get; }
+        public Func<T, TU> EntryIdSelector { get; }
+        public IEqualityComparer<T> EntryEqualityComparer { get; }
 
         public EquatableDifferenceEntry(
             T? entryBefore,
@@ -115,11 +115,6 @@ namespace DifferenceComparer.Model
                 EntryAfter,
                 EntryIdSelector,
                 EntryEqualityComparer);
-        }
-
-        public EntryRefDifference<TU> GetTrivialEntryRefDifference()
-        {
-            return GetTrivialEntryRefDifference(EntryIdSelector);
         }
 
         public EquatableDifferenceEntry<T, TU> GetInverse()

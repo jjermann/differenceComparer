@@ -699,6 +699,23 @@ namespace DifferenceComparer
             in IEnumerable<DifferenceEntry<T>> differenceData1,
             in IEnumerable<DifferenceEntry<T>> differenceData2)
         {
+            var id1HashSet = entryRefDifferenceCollection
+                .Where(d =>
+                    d.EntryBefore?.Index == (int)EntryRefDifferenceIndex.EntryAfterFromFirst
+                    || d.EntryBefore?.Index == (int)EntryRefDifferenceIndex.EntryBeforeFromFirst
+                    || d.EntryAfter?.Index == (int)EntryRefDifferenceIndex.EntryAfterFromFirst
+                    || d.EntryAfter?.Index == (int)EntryRefDifferenceIndex.EntryBeforeFromFirst)
+                .Select(d => d.Id)
+                .ToHashSet();
+            var id2HashSet = entryRefDifferenceCollection
+                .Where(d =>
+                    d.EntryBefore?.Index == (int)EntryRefDifferenceIndex.EntryAfterFromSecond
+                    || d.EntryBefore?.Index == (int)EntryRefDifferenceIndex.EntryBeforeFromSecond
+                    || d.EntryAfter?.Index == (int)EntryRefDifferenceIndex.EntryAfterFromSecond
+                    || d.EntryAfter?.Index == (int)EntryRefDifferenceIndex.EntryBeforeFromSecond)
+                .Select(d => d.Id)
+                .ToHashSet();
+
             // TODO: Use an enumerable mechanism from here on...
             var idDictionary1 = differenceData1
                 .Select(ToEquatableDifferenceEntry)
@@ -706,12 +723,11 @@ namespace DifferenceComparer
             var idDictionary2 = differenceData2
                 .Select(ToEquatableDifferenceEntry)
                 .ToDictionary(d => d.Id, d => d);
-
             var differenceEntryList = entryRefDifferenceCollection
                 .Select(d => GetDifferenceEntryFromEntryRefAndDifferenceEntryPair(
                     d,
-                    idDictionary1.ContainsKey(d.Id) ? idDictionary1[d.Id] : null,
-                    idDictionary2.ContainsKey(d.Id) ? idDictionary2[d.Id] : null))
+                    id1HashSet.Contains(d.Id) ? idDictionary1[d.Id] : null,
+                    id2HashSet.Contains(d.Id) ? idDictionary2[d.Id] : null))
                 .Where(d => d != null)
                 .Select(d => d!)
                 .ToList();
@@ -732,11 +748,11 @@ namespace DifferenceComparer
 
             var entryRefDifferenceList1 = differenceList1
                 .Select(ToEquatableDifferenceEntry)
-                .Select(d => d.GetTrivialEntryRefDifference())
+                .Select(d => d.ToTrivialEntryRefDifference())
                 .ToList();
             var entryRefDifferenceList2 = differenceList2
                 .Select(ToEquatableDifferenceEntry)
-                .Select(d => d.GetTrivialEntryRefDifference())
+                .Select(d => d.ToTrivialEntryRefDifference())
                 .ToList();
             var entryRefDifferenceCollection = GetEntryRefDifferenceProgression(
                 entryRefDifferenceList1,
