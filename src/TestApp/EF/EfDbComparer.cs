@@ -45,13 +45,13 @@ namespace TestApp.EF
         {
             var entryRefDifferenceList = GetEntryRefDifferenceProgression(
                 state1
-                    .Chunk(chunkSize)
+                    .CustomChunk(chunkSize)
                     .SelectMany(g => g
                         .Select(d => d.ToTrivialEntryRefDifference()))
                     .OrderBy(d => d.Id)
                     .ToList(),
                 state2
-                    .Chunk(chunkSize)
+                    .CustomChunk(chunkSize)
                     .SelectMany(g => g
                         .Select(d => d.ToTrivialEntryRefDifference()))
                     .OrderBy(d => d.Id)

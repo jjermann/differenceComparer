@@ -205,17 +205,25 @@ namespace DifferenceComparer
             var chunk2Dictionary = new Dictionary<TU, T>();
             var unprocessedHashSet = entryRefDictionary.Keys.ToHashSet();
 
-            var zipEnumerable = data1.Chunk(chunkSize).Zip(data2.Chunk(chunkSize));
+            var zipEnumerable = data1.CustomChunk(chunkSize).CustomZip(data2.CustomChunk(chunkSize));
             foreach (var p in zipEnumerable)
             {
-                foreach (var d in p.First)
+                if (p.First != null)
                 {
-                    chunk1Dictionary[EntryIdSelector(d)] = d;
+                    foreach (var d in p.First)
+                    {
+                        chunk1Dictionary[EntryIdSelector(d)] = d;
+                    }
                 }
-                foreach (var d in p.Second)
+
+                if (p.Second != null)
                 {
-                    chunk2Dictionary[EntryIdSelector(d)] = d;
+                    foreach (var d in p.Second)
+                    {
+                        chunk2Dictionary[EntryIdSelector(d)] = d;
+                    }
                 }
+
                 var differenceEntryDictionary = ProcessChunks(
                     entryRefDictionary,
                     id1HashSet,
@@ -269,7 +277,7 @@ namespace DifferenceComparer
             }
             foreach (var id2 in idToProcessHashSet.Intersect(chunkIdDictionary2.Keys))
             {
-                chunkIdDictionary1.Remove(id2);
+                chunkIdDictionary2.Remove(id2);
             }
 
             return differenceEntryDictionary;
@@ -793,17 +801,25 @@ namespace DifferenceComparer
             var chunk2Dictionary = new Dictionary<TU, EquatableDifferenceEntry<T, TU>>();
             var unprocessedHashSet = entryRefDictionary.Keys.ToHashSet();
 
-            var zipEnumerable = differenceData1.Chunk(chunkSize).Zip(differenceData2.Chunk(chunkSize));
+            var zipEnumerable = differenceData1.CustomChunk(chunkSize).CustomZip(differenceData2.CustomChunk(chunkSize));
             foreach (var p in zipEnumerable)
             {
-                foreach (var d in p.First.Select(ToEquatableDifferenceEntry))
+                if (p.First != null)
                 {
-                    chunk1Dictionary[d.Id] = d;
+                    foreach (var d in p.First.Select(ToEquatableDifferenceEntry))
+                    {
+                        chunk1Dictionary[d.Id] = d;
+                    }
                 }
-                foreach (var d in p.Second.Select(ToEquatableDifferenceEntry))
+
+                if (p.Second != null)
                 {
-                    chunk2Dictionary[d.Id] = d;
+                    foreach (var d in p.Second.Select(ToEquatableDifferenceEntry))
+                    {
+                        chunk2Dictionary[d.Id] = d;
+                    }
                 }
+
                 var differenceEntryDictionary = ProcessDifferenceChunks(
                     entryRefDictionary,
                     id1HashSet,

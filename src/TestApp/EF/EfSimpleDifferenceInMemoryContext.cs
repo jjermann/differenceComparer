@@ -51,7 +51,7 @@ namespace TestApp.EF
         public ICollection<EntryRefDifference<string>> GetAllEntryRefDifferences()
         {
             return EntrySet
-                .Chunk(ChunkSize)
+                .CustomChunk(ChunkSize)
                 .SelectMany(g => g
                     .Select(d => d.ToTrivialEntryRefDifference()))
                 .ToList();

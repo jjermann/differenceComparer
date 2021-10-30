@@ -74,7 +74,7 @@ namespace TestApp.EF
 
         public IEnumerable<T> GetAllEnumerableByIdList(IList<TU> idList)
         {
-            return idList.Chunk(ChunkSize)
+            return idList.CustomChunk(ChunkSize)
                 .SelectMany(subList => EntrySet.Where(e => subList.Contains(EntryIdSelector(e))));
         }
 
