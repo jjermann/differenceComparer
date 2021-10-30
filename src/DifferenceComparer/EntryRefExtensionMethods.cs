@@ -30,5 +30,37 @@ namespace DifferenceComparer
             return differenceEntry.ToTrivialEntryRefDifference(
                 x => differenceEntry.EntryIdSelector(x));
         }
+
+        internal static bool IsInFirstDifference<TU>(this EntryRefDifference<TU> entryRefDifference)
+            where TU: notnull
+        {
+            return entryRefDifference.EntryBefore?.Index == 1 
+                   || entryRefDifference.EntryAfter?.Index == 1;
+        }
+
+        internal static bool IsInSecondDifference<TU>(this EntryRefDifference<TU> entryRefDifference)
+            where TU : notnull
+        {
+            return entryRefDifference.EntryBefore?.Index == 2
+                   || entryRefDifference.EntryAfter?.Index == 2;
+        }
+
+        internal static bool IsInFirstDifferenceProgression<TU>(this EntryRefDifference<TU> entryRefDifference)
+            where TU : notnull
+        {
+            return entryRefDifference.EntryBefore?.Index == (int)EntryRefDifferenceIndex.EntryAfterFromFirst
+                   || entryRefDifference.EntryBefore?.Index == (int)EntryRefDifferenceIndex.EntryBeforeFromFirst
+                   || entryRefDifference.EntryAfter?.Index == (int)EntryRefDifferenceIndex.EntryAfterFromFirst
+                   || entryRefDifference.EntryAfter?.Index == (int)EntryRefDifferenceIndex.EntryBeforeFromFirst;
+        }
+
+        internal static bool IsInSecondDifferenceProgression<TU>(this EntryRefDifference<TU> entryRefDifference)
+            where TU : notnull
+        {
+            return entryRefDifference.EntryBefore?.Index == (int)EntryRefDifferenceIndex.EntryAfterFromSecond
+                   || entryRefDifference.EntryBefore?.Index == (int)EntryRefDifferenceIndex.EntryBeforeFromSecond
+                   || entryRefDifference.EntryAfter?.Index == (int)EntryRefDifferenceIndex.EntryAfterFromSecond
+                   || entryRefDifference.EntryAfter?.Index == (int)EntryRefDifferenceIndex.EntryBeforeFromSecond;
+        }
     }
 }

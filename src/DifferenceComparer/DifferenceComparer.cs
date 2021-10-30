@@ -177,30 +177,102 @@ namespace DifferenceComparer
         /// Remark: Only matching data for the ids of entryRefDifferenceCollection are needed.
         /// Except for delete and add operations this unfortunately includes all data from both data sets.
         /// </param>
+        /// <param name="chunkSize">
+        /// How much data to fetch at a time from data1/2 (default 1000).
+        /// A higher value is faster but requires more memory.
+        /// </param>
         /// <returns>
         /// The difference between collection 1 and 2.
         /// </returns>
         public List<DifferenceEntry<T>> GetDifference(
             in ICollection<EntryRefDifference<TU>> entryRefDifferenceCollection,
             in IEnumerable<T> data1,
-            in IEnumerable<T> data2)
+            in IEnumerable<T> data2,
+            int chunkSize = 1000)
         {
-            // TODO: Use an enumerable mechanism from here on...
-            var idDictionary1 = data1
-                .ToDictionary(EntryIdSelector, e => e);
-            var idDictionary2 = data2
-                .ToDictionary(EntryIdSelector, e => e);
+            var entryRefDictionary = entryRefDifferenceCollection
+                .ToDictionary(d => d.Id, d => d);
+            var id1HashSet = entryRefDifferenceCollection
+                .Where(d => d.IsInFirstDifference())
+                .Select(d => d.Id)
+                .ToHashSet();
+            var id2HashSet = entryRefDifferenceCollection
+                .Where(d => d.IsInSecondDifference())
+                .Select(d => d.Id)
+                .ToHashSet();
+            var finalList = new List<DifferenceEntry<T>>();
+            var chunk1Dictionary = new Dictionary<TU, T>();
+            var chunk2Dictionary = new Dictionary<TU, T>();
+            var unprocessedHashSet = entryRefDictionary.Keys.ToHashSet();
 
-            var differenceEntryList = entryRefDifferenceCollection
-                .Select(d => GetDifferenceEntryFromEntryRefAndEntryPair(
-                    d,
-                    idDictionary1.ContainsKey(d.Id) ? idDictionary1[d.Id] : null,
-                    idDictionary2.ContainsKey(d.Id) ? idDictionary2[d.Id] : null))
-                .Where(d => d != null)
-                .Select(d => d!)
-                .ToList();
+            var zipEnumerable = data1.Chunk(chunkSize).Zip(data2.Chunk(chunkSize));
+            foreach (var p in zipEnumerable)
+            {
+                foreach (var d in p.First)
+                {
+                    chunk1Dictionary[EntryIdSelector(d)] = d;
+                }
+                foreach (var d in p.Second)
+                {
+                    chunk2Dictionary[EntryIdSelector(d)] = d;
+                }
+                var differenceEntryDictionary = ProcessChunks(
+                    entryRefDictionary,
+                    id1HashSet,
+                    id2HashSet,
+                    chunk1Dictionary,
+                    chunk2Dictionary);
+                foreach (var id in differenceEntryDictionary.Keys)
+                {
+                    unprocessedHashSet.Remove(id);
+                }
 
-            return differenceEntryList;
+                finalList.AddRange(differenceEntryDictionary.Values
+                    .Where(d => d != null)
+                    .Select(d => d!));
+            }
+
+            if (unprocessedHashSet.Any())
+            {
+                var msg = "Missing data for the specified EntryRefDifferences!";
+                throw new InvalidOperationException(msg);
+            }
+
+            return finalList;
+        }
+
+        private IDictionary<TU, DifferenceEntry<T>?> ProcessChunks(
+            IDictionary<TU, EntryRefDifference<TU>> entryRefDifferenceDictionary,
+            HashSet<TU> id1HashSet,
+            HashSet<TU> id2HashSet,
+            IDictionary<TU, T> chunkIdDictionary1,
+            IDictionary<TU, T> chunkIdDictionary2)
+        {
+            var idHashSet = id1HashSet.Union(id2HashSet).ToHashSet();
+            var idToProcessHashSet = idHashSet.Intersect(
+                    (chunkIdDictionary1.Keys.Except(id2HashSet))
+                    .Union(chunkIdDictionary2.Keys.Except(id1HashSet))
+                    .Union(chunkIdDictionary1.Keys.Intersect(chunkIdDictionary2.Keys)))
+                .ToHashSet();
+
+            var differenceEntryDictionary = idToProcessHashSet
+                .ToDictionary(
+                    d => d,
+                    d => GetDifferenceEntryFromEntryRefAndEntryPair(
+                        entryRefDifferenceDictionary[d],
+                        id1HashSet.Contains(d) ? chunkIdDictionary1[d] : null,
+                        id2HashSet.Contains(d) ? chunkIdDictionary2[d] : null));
+
+            foreach (var id1 in idToProcessHashSet.Intersect(chunkIdDictionary1.Keys))
+            {
+                chunkIdDictionary1.Remove(id1);
+            }
+            foreach (var id2 in idToProcessHashSet.Intersect(chunkIdDictionary2.Keys))
+            {
+                chunkIdDictionary1.Remove(id2);
+            }
+
+            return differenceEntryDictionary;
         }
 
         // Remark: Switched arguments give the inverse difference.
@@ -609,8 +681,8 @@ namespace DifferenceComparer
             return differenceEntryList;
         }
 
-        private DifferenceEntry<T>? GetDifferenceEntryFromEntryRefAndDifferenceEntryPair(
-            in DifferenceEntry<EntryRef<TU>> refDifference,
+        private DifferenceEntry<T>? GetDifferenceEntryFromEntryRefDifferenceAndDifferenceEntryPair(
+            in EntryRefDifference<TU> refDifference,
             in DifferenceEntry<T>? entry1,
             in DifferenceEntry<T>? entry2)
         {
@@ -685,11 +757,17 @@ namespace DifferenceComparer
         /// </param>
         /// <param name="differenceData1">
         /// Corresponding difference data from the first difference (even as an enumerable).
+        /// Important: The enumerable should ideally have a matching ordering to differenceData2 (regarding Ids).
         /// Remark: Only matching data for the ids of entryRefDifferenceCollection are needed.
         /// </param>
         /// <param name="differenceData2">
         /// Corresponding difference data from the second difference (even as an enumerable).
-        /// Remark: Only matching data for the ids of entryRefDifferenceCollection are needed.
+        /// Important: The enumerable should ideally have a matching ordering to differenceData1 (regarding Ids).
+        /// /// Remark: Only matching data for the ids of entryRefDifferenceCollection are needed.
+        /// </param>
+        /// <param name="chunkSize">
+        /// How much data to fetch at a time from differenceData1/2 (default 1000).
+        /// A higher value is faster but requires more memory.
         /// </param>
         /// <returns>
         /// The difference progression from difference 1 to difference 2.
@@ -697,42 +775,92 @@ namespace DifferenceComparer
         public List<DifferenceEntry<T>> GetDifferenceProgression(
             in ICollection<EntryRefDifference<TU>> entryRefDifferenceCollection,
             in IEnumerable<DifferenceEntry<T>> differenceData1,
-            in IEnumerable<DifferenceEntry<T>> differenceData2)
+            in IEnumerable<DifferenceEntry<T>> differenceData2,
+            int chunkSize = 1000)
         {
+            var entryRefDictionary = entryRefDifferenceCollection
+                .ToDictionary(d => d.Id, d => d);
             var id1HashSet = entryRefDifferenceCollection
-                .Where(d =>
-                    d.EntryBefore?.Index == (int)EntryRefDifferenceIndex.EntryAfterFromFirst
-                    || d.EntryBefore?.Index == (int)EntryRefDifferenceIndex.EntryBeforeFromFirst
-                    || d.EntryAfter?.Index == (int)EntryRefDifferenceIndex.EntryAfterFromFirst
-                    || d.EntryAfter?.Index == (int)EntryRefDifferenceIndex.EntryBeforeFromFirst)
+                .Where(d => d.IsInFirstDifferenceProgression())
                 .Select(d => d.Id)
                 .ToHashSet();
             var id2HashSet = entryRefDifferenceCollection
-                .Where(d =>
-                    d.EntryBefore?.Index == (int)EntryRefDifferenceIndex.EntryAfterFromSecond
-                    || d.EntryBefore?.Index == (int)EntryRefDifferenceIndex.EntryBeforeFromSecond
-                    || d.EntryAfter?.Index == (int)EntryRefDifferenceIndex.EntryAfterFromSecond
-                    || d.EntryAfter?.Index == (int)EntryRefDifferenceIndex.EntryBeforeFromSecond)
+                .Where(d => d.IsInSecondDifferenceProgression())
                 .Select(d => d.Id)
                 .ToHashSet();
+            var finalList = new List<DifferenceEntry<T>>();
+            var chunk1Dictionary = new Dictionary<TU, EquatableDifferenceEntry<T, TU>>();
+            var chunk2Dictionary = new Dictionary<TU, EquatableDifferenceEntry<T, TU>>();
+            var unprocessedHashSet = entryRefDictionary.Keys.ToHashSet();
 
-            // TODO: Use an enumerable mechanism from here on...
-            var idDictionary1 = differenceData1
-                .Select(ToEquatableDifferenceEntry)
-                .ToDictionary(d => d.Id, d => d);
-            var idDictionary2 = differenceData2
-                .Select(ToEquatableDifferenceEntry)
-                .ToDictionary(d => d.Id, d => d);
-            var differenceEntryList = entryRefDifferenceCollection
-                .Select(d => GetDifferenceEntryFromEntryRefAndDifferenceEntryPair(
-                    d,
-                    id1HashSet.Contains(d.Id) ? idDictionary1[d.Id] : null,
-                    id2HashSet.Contains(d.Id) ? idDictionary2[d.Id] : null))
-                .Where(d => d != null)
-                .Select(d => d!)
-                .ToList();
+            var zipEnumerable = differenceData1.Chunk(chunkSize).Zip(differenceData2.Chunk(chunkSize));
+            foreach (var p in zipEnumerable)
+            {
+                foreach (var d in p.First.Select(ToEquatableDifferenceEntry))
+                {
+                    chunk1Dictionary[d.Id] = d;
+                }
+                foreach (var d in p.Second.Select(ToEquatableDifferenceEntry))
+                {
+                    chunk2Dictionary[d.Id] = d;
+                }
+                var differenceEntryDictionary = ProcessDifferenceChunks(
+                    entryRefDictionary,
+                    id1HashSet,
+                    id2HashSet,
+                    chunk1Dictionary,
+                    chunk2Dictionary);
+                foreach (var id in differenceEntryDictionary.Keys)
+                {
+                    unprocessedHashSet.Remove(id);
+                }
 
-            return differenceEntryList;
+                finalList.AddRange(differenceEntryDictionary.Values
+                    .Where(d => d != null)
+                    .Select(d => d!));
+            }
+
+            if (unprocessedHashSet.Any())
+            {
+                var msg = "Missing data for the specified EntryRefDifferences!";
+                throw new InvalidOperationException(msg);
+            }
+
+            return finalList;
+        }
+
+        private IDictionary<TU, DifferenceEntry<T>?> ProcessDifferenceChunks(
+            IDictionary<TU, EntryRefDifference<TU>> entryRefDifferenceDictionary,
+            HashSet<TU> id1HashSet,
+            HashSet<TU> id2HashSet,
+            IDictionary<TU, EquatableDifferenceEntry<T, TU>> chunkIdDictionary1,
+            IDictionary<TU, EquatableDifferenceEntry<T, TU>> chunkIdDictionary2)
+        {
+            var idHashSet = id1HashSet.Union(id2HashSet).ToHashSet();
+            var idToProcessHashSet = idHashSet.Intersect(
+                    (chunkIdDictionary1.Keys.Except(id2HashSet))
+                    .Union(chunkIdDictionary2.Keys.Except(id1HashSet))
+                    .Union(chunkIdDictionary1.Keys.Intersect(chunkIdDictionary2.Keys)))
+                .ToHashSet();
+
+            var differenceEntryDictionary = idToProcessHashSet
+                .ToDictionary(
+                    d => d,
+                    d => GetDifferenceEntryFromEntryRefDifferenceAndDifferenceEntryPair(
+                        entryRefDifferenceDictionary[d],
+                        id1HashSet.Contains(d) ? chunkIdDictionary1[d] : null,
+                        id2HashSet.Contains(d) ? chunkIdDictionary2[d] : null));
+
+            foreach (var id1 in idToProcessHashSet.Intersect(chunkIdDictionary1.Keys))
+            {
+                chunkIdDictionary1.Remove(id1);
+            }
+            foreach (var id2 in idToProcessHashSet.Intersect(chunkIdDictionary2.Keys))
+            {
+                chunkIdDictionary1.Remove(id2);
+            }
+
+            return differenceEntryDictionary;
         }
 
         // Remark: Switched arguments give the inverse difference.
