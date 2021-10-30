@@ -30,7 +30,7 @@ namespace TestApp.Mocks
             return dbMock;
         }
 
-        public ICollection<EquatableDifferenceEntry<EntryRef<string>, string>> GetAllDifferenceEntryRefs()
+        public ICollection<EntryRefDifference<string>> GetAllEntryRefDifferences()
         {
             return EntryDictionary.Values
                 .Select(d => d.GetTrivialEntryRefDifference(x => x.Id))

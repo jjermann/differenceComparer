@@ -47,6 +47,10 @@ See [TestApp](https://github.com/jjermann/differenceComparer/blob/main/src/TestA
 ## Classes
 - ```DifferenceEntry<T>```
   This is the simple core `data` behind the difference (between two states) of individual entries.
+  A `DifferenceEntry` is given by nullable `EntryBefore` and `EntryAfter`.
+  `EntryBefore = null` (and `EntryAfter != null`) corresponds to `Add`.
+  `EntryAfter = null` (and `EntryBefore != null`) corresponds to `Delete`.
+  `EntryBefore != null and EntryAfter != null` corresponds to `Update`.
   They can be (de)serialized (provided `T` can be) but the class can't identify or distinguish entries yet.
 
 - ```EquatableDifferenceEntry<T, TU>```
@@ -55,8 +59,13 @@ See [TestApp](https://github.com/jjermann/differenceComparer/blob/main/src/TestA
 - ```EntryRef(TU Id, int Index = 0)```
   This represents a `reference` to a data entry based on its `Id`.
   The optional `Index` parameter can be used to further distinguish entries from different data states (indexed by `Index`).
-  If `T` is large/slow compared to `TU` entry references can be used for more efficient difference calculations.
+  If `T` is large compared to `TU` then entry references can be used for more efficient difference calculations.
   Essentially by first working with `EntryRef` data and then fetching the corresponding entries.
+
+-- ```EntryRefDifference<TU>```
+  This represents a `reference` to a `DifferenceEntry` based on it's `Id` and (nullable) index indicators for `EntryBefore` and `EntryAfter`.
+  If `T` is large compared to `TU` then `EntryRefDifference` can be used for more efficient difference calculations.
+  Essentially by first working with `EntryRefDifference` data and then fetching the corresponding entry differences.
 
 -- ```DifferenceComparer<T, TU>```
   The main class.
@@ -97,7 +106,7 @@ public List<DifferenceEntry<T>> GetDifference(
 A more (memory) efficient version is available which first (as a prelimenary step)
 requires one to calculate the difference between `Id`'s (of type `TU`) using e.g.
 ```
-public List<EquatableDifferenceEntry<EntryRef<TU>, TU>> GetEntryRefDifference(
+public List<EntryRefDifference<TU>> GetEntryRefDifference(
     in ICollection<TU> col1,
     in ICollection<TU> col2)
 ```
@@ -106,7 +115,7 @@ Using the `EntryRef` difference and an enumeration for the data entries
 in both data sets the difference can be calculated with:
 ```
 public List<DifferenceEntry<T>> GetDifference(
-    in ICollection<EquatableDifferenceEntry<EntryRef>> entryRefDifferenceCollection,
+    in ICollection<EntryRefDifference<TU>> entryRefDifferenceCollection,
     in IEnumerable<T> data1,
     in IEnumerable<T> data2)
 ```
@@ -123,16 +132,16 @@ public List<DifferenceEntry<T>> GetDifferenceProgression(
 A more (memory) efficient version is available which first (as a prelimenary step)
 requires one to calculate the difference progression between `EntryRef<TU>` differences using e.g.
 ```
-public List<EquatableDifferenceEntry<EntryRef<TU>, TU>> GetEntryRefDifferenceProgression(
-    in ICollection<EquatableDifferenceEntry<EntryRef<TU>, TU>> entryRefDifferenceList1,
-    in ICollection<EquatableDifferenceEntry<EntryRef<TU>, TU>> entryRefDifferenceList2)
+public List<EntryRefDifference<TU>> GetEntryRefDifferenceProgression(
+    in ICollection<EntryRefDifference<TU>> entryRefDifferenceList1,
+    in ICollection<EntryRefDifference<TU>> entryRefDifferenceList2)
 ```
 
 Using the `EntryRef` difference progression and an enumeration for the difference entries
 in both data sets the difference progression can be calculated with:
 ```
 public List<DifferenceEntry<T>> GetDifferenceProgression(
-    in ICollection<EquatableDifferenceEntry<EntryRef<TU>, TU>> entryRefDifferenceCollection,
+    in ICollection<EntryRefDifference<TU>> entryRefDifferenceCollection,
     in IEnumerable<DifferenceEntry<T>> differenceData1,
     in IEnumerable<DifferenceEntry<T>> differenceData2)
 ```

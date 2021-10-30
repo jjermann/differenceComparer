@@ -74,8 +74,8 @@ namespace TestApp
             // 2. Generate EntryRefDifferenceProgression based on the DifferenceEntryRefs (basically the ids).
             // 3. Generate Difference using the EntryRefDifferenceProgression and difference data sets as enumerables.
             var entryRefDifferenceProgression = differenceComparer.GetEntryRefDifferenceProgression(
-                    difference01DbMock.GetAllDifferenceEntryRefs(),
-                    difference02DbMock.GetAllDifferenceEntryRefs());
+                    difference01DbMock.GetAllEntryRefDifferences(),
+                    difference02DbMock.GetAllEntryRefDifferences());
             var efficientDifferenceProgression = differenceComparer.GetDifferenceProgression(
                 entryRefDifferenceProgression,
                 difference01DbMock.GetAllAsOrderedEnumerable(),

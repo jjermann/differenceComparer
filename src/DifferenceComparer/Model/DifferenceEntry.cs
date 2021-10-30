@@ -50,18 +50,14 @@ namespace DifferenceComparer.Model
         [NotNull]
         public T ExampleEntry => EntryBefore ?? EntryAfter!;
 
-        public EquatableDifferenceEntry<EntryRef<TU>, TU> GetTrivialEntryRefDifference<TU>(
+        public EntryRefDifference<TU> GetTrivialEntryRefDifference<TU>(
             Func<T, TU> entryIdSelector)
             where TU: notnull
         {
-            return new EquatableDifferenceEntry<EntryRef<TU>, TU>(
-                EntryBefore != null
-                    ? new EntryRef<TU>(entryIdSelector(EntryBefore))
-                    : null,
-                EntryAfter != null
-                    ? new EntryRef<TU>(entryIdSelector(EntryAfter))
-                    : null,
-                x => x.Id);
+            return new EntryRefDifference<TU>(
+                entryIdSelector(ExampleEntry),
+                EntryBefore != null ? 0 : null,
+                EntryAfter != null ? 0 : null);
         }
 
         public override string ToString()

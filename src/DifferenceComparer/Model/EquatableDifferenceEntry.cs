@@ -117,7 +117,7 @@ namespace DifferenceComparer.Model
                 EntryEqualityComparer);
         }
 
-        public EquatableDifferenceEntry<EntryRef<TU>, TU> GetTrivialEntryRefDifference()
+        public EntryRefDifference<TU> GetTrivialEntryRefDifference()
         {
             return GetTrivialEntryRefDifference(EntryIdSelector);
         }
