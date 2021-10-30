@@ -12,6 +12,7 @@ namespace DifferenceComparer
     {
         public Func<T, TU> EntryIdSelector { get; }
         public IEqualityComparer<T> EntryEqualityComparer { get; }
+        public bool SkipValidation { get; set; }
 
         /// <param name="entryIdSelector">
         /// Selector for "Id".
@@ -24,12 +25,17 @@ namespace DifferenceComparer
         /// Must correspond to an equivalence relation.
         /// Business condition: Must distinguish data collection entries that have "changed".
         /// </param>
+        /// <param name="skipValidation">
+        /// If true then Validations are skipped (default false).
+        /// </param>
         public DifferenceComparer(
             Func<T, TU> entryIdSelector,
-            IEqualityComparer<T>? equalityComparer = null)
+            IEqualityComparer<T>? equalityComparer = null,
+            bool skipValidation = false)
         {
             EntryIdSelector = entryIdSelector;
             EntryEqualityComparer = equalityComparer ?? EqualityComparer<T>.Default;
+            SkipValidation = skipValidation;
         }
 
         public string SerializeDifference(
@@ -506,8 +512,10 @@ namespace DifferenceComparer
             in ICollection<EntryRefDifference<TU>> entryRefDifferenceList1,
             in ICollection<EntryRefDifference<TU>> entryRefDifferenceList2)
         {
-            // Remark: If this is unwanted/inefficient it could be skipped.
-            ValidateEntryRefDifferenceProgression(entryRefDifferenceList1, entryRefDifferenceList2);
+            if (!SkipValidation)
+            {
+                ValidateEntryRefDifferenceProgression(entryRefDifferenceList1, entryRefDifferenceList2);
+            }
 
             var differenceList1TypeIdDictionary = entryRefDifferenceList1
                 .GroupBy(d => d.DifferenceType)
@@ -717,8 +725,10 @@ namespace DifferenceComparer
             in ICollection<DifferenceEntry<T>> differenceList1,
             in ICollection<DifferenceEntry<T>> differenceList2)
         {
-            // Remark: If this is unwanted/inefficient it could be skipped.
-            ValidateDifferenceProgression(differenceList1, differenceList2);
+            if (!SkipValidation)
+            {
+                ValidateDifferenceProgression(differenceList1, differenceList2);
+            }
 
             var entryRefDifferenceList1 = differenceList1
                 .Select(ToEquatableDifferenceEntry)
@@ -744,8 +754,10 @@ namespace DifferenceComparer
             in ICollection<DifferenceEntry<T>> differenceCollectionBefore,
             in ICollection<DifferenceEntry<T>> differenceCollectionAfter)
         {
-            // Remark: If this is unwanted/inefficient it could be skipped.
-            ValidateDifferenceSquash(differenceCollectionBefore, differenceCollectionAfter);
+            if (!SkipValidation)
+            {
+                ValidateDifferenceSquash(differenceCollectionBefore, differenceCollectionAfter);
+            }
 
             var differenceListBeforeIdDictionary = differenceCollectionBefore
                 .Select(ToEquatableDifferenceEntry)
