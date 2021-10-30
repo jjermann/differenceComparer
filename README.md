@@ -35,15 +35,15 @@ A main challenge is obviously also how to efficiently retrieve the difference `D
 
 ## Difference progression
 Also see Example A above...
-![Difference progression diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/jjermann/differenceComparer/main/doc/differenceProgression.puml)
+![Difference progression diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/jjermann/differenceComparer/develop/doc/differenceProgression.puml)
 
 ## Squashed differences
 Also see Example B above...
-![Difference squash diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/jjermann/differenceComparer/main/doc/differenceSquash.puml)
+![Difference squash diagram](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/jjermann/differenceComparer/develop/doc/differenceSquash.puml)
 
 
 # Basic syntax and examples
-See [TestApp](https://github.com/jjermann/differenceComparer/blob/main/src/TestApp/Program.cs) for an example application (it uses a small DbMock).
+See [TestApp](https://github.com/jjermann/differenceComparer/blob/develop/src/TestApp/Program.cs) for an example application (it uses a small DbMock).
 ## Classes
 - ```DifferenceEntry<T>```
   This is the simple core `data` behind the difference (between two states) of individual entries.
