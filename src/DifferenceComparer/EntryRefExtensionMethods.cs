@@ -1,5 +1,4 @@
-﻿using System;
-using DifferenceComparer.Model;
+﻿using DifferenceComparer.Model;
 
 namespace DifferenceComparer
 {
@@ -11,24 +10,14 @@ namespace DifferenceComparer
         }
 
         public static EntryRefDifference<TU> ToTrivialEntryRefDifference<T, TU>(
-            this DifferenceEntry<T> differenceEntry,
-            Func<T, TU> entryIdSelector)
+            this DifferenceEntry<T, TU> differenceEntry)
             where T: class
             where TU : notnull
         {
             return new EntryRefDifference<TU>(
-                entryIdSelector(differenceEntry.ExampleEntry),
+                differenceEntry.Id,
                 differenceEntry.EntryBefore != null ? 0 : null,
                 differenceEntry.EntryAfter != null ? 0 : null);
-        }
-
-        public static EntryRefDifference<TU> ToTrivialEntryRefDifference<T, TU>(
-            this EquatableDifferenceEntry<T, TU> differenceEntry)
-            where T : class
-            where TU : notnull
-        {
-            return differenceEntry.ToTrivialEntryRefDifference(
-                x => differenceEntry.EntryIdSelector(x));
         }
 
         internal static bool IsInFirstDifference<TU>(this EntryRefDifference<TU> entryRefDifference)

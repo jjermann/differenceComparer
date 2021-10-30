@@ -3,8 +3,9 @@ using System.Collections.Generic;
 
 namespace DifferenceComparer.Model
 {
-    public class DifferenceEntryEqualityComparer<T>: IEqualityComparer<DifferenceEntry<T>>
+    public class DifferenceEntryEqualityComparer<T, TU>: IEqualityComparer<DifferenceEntry<T, TU>>
         where T : class
+        where TU: notnull
     {
         private readonly IEqualityComparer<T> _entryEqualityComparer;
 
@@ -14,7 +15,7 @@ namespace DifferenceComparer.Model
             _entryEqualityComparer = entryEqualityComparer ?? EqualityComparer<T>.Default;
         }
 
-        public bool Equals(DifferenceEntry<T>? x, DifferenceEntry<T>? y)
+        public bool Equals(DifferenceEntry<T, TU>? x, DifferenceEntry<T, TU>? y)
         {
             if (ReferenceEquals(x, y))
             {
@@ -32,6 +33,11 @@ namespace DifferenceComparer.Model
             }
 
             if (x.GetType() != y.GetType())
+            {
+                return false;
+            }
+
+            if (!x.Id.Equals(y.Id))
             {
                 return false;
             }
@@ -54,9 +60,10 @@ namespace DifferenceComparer.Model
             return true;
         }
 
-        public int GetHashCode(DifferenceEntry<T> obj)
+        public int GetHashCode(DifferenceEntry<T, TU> obj)
         {
             return HashCode.Combine(
+                obj.Id,
                 obj.DifferenceType,
                 obj.EntryBefore != null
                     ? _entryEqualityComparer.GetHashCode(obj.EntryBefore)

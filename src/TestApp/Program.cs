@@ -102,7 +102,7 @@ namespace TestApp
 
             // Note: Usually we don't compare arbitrary differences but if needed
             // one could do it by looping over all Ids:
-            var differenceEqualityComparer = new DifferenceEntryEqualityComparer<SimpleTestEntry>();
+            var differenceEqualityComparer = new DifferenceEntryEqualityComparer<SimpleTestEntry, string>();
             var squashedIdDictionary = squashedDifference
                 .ToDictionary(
                     d => d.ExampleEntry.Id,
@@ -121,7 +121,7 @@ namespace TestApp
             Debug.Assert(areEntriesEqual);
 
             // Or (more fun): We could use a difference DifferenceComparer...
-            var differenceDifferenceComparer = new DifferenceComparer<DifferenceEntry<SimpleTestEntry>, string>(
+            var differenceDifferenceComparer = new DifferenceComparer<DifferenceEntry<SimpleTestEntry, string>, string>(
                 x => x.ExampleEntry.Id,
                 differenceEqualityComparer);
             var differenceDifferenceForSquashed = differenceDifferenceComparer.GetDifference(
@@ -146,6 +146,29 @@ namespace TestApp
             var efDifference01 = efDbComparer.GetDbDifference(efDb0.EntrySet, efDb1.EntrySet);
             var efDifference02 = efDbComparer.GetDbDifference(efDb0.EntrySet, efDb2.EntrySet);
             var efDifference12 = efDbComparer.GetDbDifference(efDb1.EntrySet, efDb2.EntrySet);
+            var efDifferenceDb01 = EfSimpleDifferenceInMemoryContext.InitializeFromCollection(efDifference01);
+            var efDifferenceDb02 = EfSimpleDifferenceInMemoryContext.InitializeFromCollection(efDifference02);
+            var efDifferenceDb12 = EfSimpleDifferenceInMemoryContext.InitializeFromCollection(efDifference12);
+            var efDifferenceProgression = efDbComparer.GetDbDifferenceProgression(
+                efDifferenceDb01.EntrySet,
+                efDifferenceDb02.EntrySet);
+            var efSquashedProgression = efDbComparer.GetDbSquashedDifference(
+                efDifferenceDb01.EntrySet,
+                efDifferenceDb12.EntrySet);
+
+            var differenceDifferenceComparer = new DifferenceComparer<DifferenceEntry<SimpleTestEntry, string>, string>(
+                x => x.ExampleEntry.Id);
+            var differenceDifferenceForSquashed = differenceDifferenceComparer.GetDifference(
+                efSquashedProgression,
+                efDifference02);
+            var areDifferencesEqualForSquashed = !differenceDifferenceForSquashed.Any();
+            Debug.Assert(areDifferencesEqualForSquashed);
+
+            var differenceDifferenceForProgression = differenceDifferenceComparer.GetDifference(
+                efDifferenceProgression,
+                efDifference12);
+            var areDifferencesEqualForProgression = !differenceDifferenceForProgression.Any();
+            Debug.Assert(areDifferencesEqualForProgression);
         }
     }
 }

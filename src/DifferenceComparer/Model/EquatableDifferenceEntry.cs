@@ -5,7 +5,7 @@ using System.Text.Json;
 namespace DifferenceComparer.Model
 {
     public class EquatableDifferenceEntry<T, TU> :
-        DifferenceEntry<T>,
+        DifferenceEntry<T, TU>,
         IEquatable<EquatableDifferenceEntry<T, TU>>
         where T : class
         where TU : notnull
@@ -18,10 +18,19 @@ namespace DifferenceComparer.Model
             T? entryAfter,
             Func<T, TU> entryIdSelector,
             IEqualityComparer<T>? entryEqualityComparer = null)
-            : base(entryBefore, entryAfter)
         {
+            EntryBefore = entryBefore;
+            EntryAfter = entryAfter;
+            Id = entryIdSelector(ExampleEntry);
             EntryIdSelector = entryIdSelector;
             EntryEqualityComparer = entryEqualityComparer ?? EqualityComparer<T>.Default;
+
+            if (EntryBefore == null
+                && EntryAfter == null)
+            {
+                var msg = "At least one entry must not be null!";
+                throw new ArgumentException(msg);
+            }
 
             if (EntryBefore != null
                 && EntryAfter != null
@@ -106,8 +115,6 @@ namespace DifferenceComparer.Model
                     : 0);
         }
 
-        public TU Id => EntryIdSelector(ExampleEntry);
-        
         public EquatableDifferenceEntry<T, TU> Clone()
         {
             return new EquatableDifferenceEntry<T, TU>(
@@ -127,7 +134,7 @@ namespace DifferenceComparer.Model
         }
 
         public static EquatableDifferenceEntry<T, TU> FromDifferenceEntry(
-            DifferenceEntry<T> differenceEntry,
+            DifferenceEntry<T, TU> differenceEntry,
             Func<T, TU> entryIdSelector,
             IEqualityComparer<T>? entryEqualityComparer = null)
         {
@@ -144,7 +151,7 @@ namespace DifferenceComparer.Model
             IEqualityComparer<T>? entryEqualityComparer = null,
             JsonSerializerOptions? options = null)
         {
-            var differenceEntry = JsonSerializer.Deserialize<DifferenceEntry<T>>(json, options);
+            var differenceEntry = JsonSerializer.Deserialize<DifferenceEntry<T, TU>>(json, options);
             if (differenceEntry == null)
             {
                 throw new InvalidOperationException("Unable to deserialize the given json!");

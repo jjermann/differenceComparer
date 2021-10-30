@@ -45,16 +45,16 @@ Also see Example B above...
 # Basic syntax and examples
 See [TestApp](https://github.com/jjermann/differenceComparer/blob/develop/src/TestApp/Program.cs) for an example application (it uses a small DbMock).
 ## Classes
-- ```DifferenceEntry<T>```
+- ```DifferenceEntry<T, TU>```
   This is the simple core `data` behind the difference (between two states) of individual entries.
-  A `DifferenceEntry` is given by nullable `EntryBefore` and `EntryAfter`.
+  A `DifferenceEntry` is given by and `Id` of type `TU` and nullable `EntryBefore` and `EntryAfter` of type `T`.
   `EntryBefore = null` (and `EntryAfter != null`) corresponds to `Add`.
   `EntryAfter = null` (and `EntryBefore != null`) corresponds to `Delete`.
   `EntryBefore != null and EntryAfter != null` corresponds to `Update`.
-  They can be (de)serialized (provided `T` can be) but the class can't identify or distinguish entries yet.
+  They can be (de)serialized (provided `T` and `TU` can be) but the class can't compare entries yet.
 
 - ```EquatableDifferenceEntry<T, TU>```
-  This extends a `DifferenceEntry<T>` with an id selector (which maps an entry to it's `Id` of type `TU`) and an entry equality comparer.
+  This extends a `DifferenceEntry<T, TU>` with an id selector (which maps an entry to it's `Id` of type `TU`) and an entry equality comparer.
 
 - ```EntryRef(TU Id, int Index = 0)```
   This represents a `reference` to a data entry based on its `Id`.
@@ -70,7 +70,7 @@ See [TestApp](https://github.com/jjermann/differenceComparer/blob/develop/src/Te
 -- ```DifferenceComparer<T, TU>```
   The main class.
   Used to compare and work with differences of data states of type `T` with `Id`s of type `TU`.
-  The class needs an `Id` selector an equality comparer for the entries.
+  The class needs an `Id` selector and an equality comparer for the entries.
 
 ### Generic types `T` and `TU`
 The generic entry type `T` must be a class and (for difference comparisons) requires an `EqualityComparer`.
@@ -83,14 +83,14 @@ For example:
 
 ## DifferenceComparer methods
 ### (De)serialize
-Differences (`DifferenceEntry<T>`) can be (deserialized):
+Differences (`DifferenceEntry<T, TU>`) can be (deserialized):
 ```
 public string SerializeDifference(
-    ICollection<DifferenceEntry<T>> differenceEntryCollection,
+    ICollection<DifferenceEntry<T, TU>> differenceEntryCollection,
     JsonSerializerOptions? options = null)
 ```
 ```
-public ICollection<DifferenceEntry<T>> DeserializeDifference(
+public ICollection<DifferenceEntry<T, TU>> DeserializeDifference(
     string json,
     JsonSerializerOptions? options = null)
 ```
@@ -98,7 +98,7 @@ public ICollection<DifferenceEntry<T>> DeserializeDifference(
 ### Difference between data sets
 The difference between two data states can be calculated with:
 ```
-public List<DifferenceEntry<T>> GetDifference(
+public List<DifferenceEntry<T, TU>> GetDifference(
     in ICollection<T> col1,
     in ICollection<T> col2)
 ```
@@ -114,7 +114,7 @@ public List<EntryRefDifference<TU>> GetEntryRefDifference(
 Using the `EntryRef` difference and an enumeration for the data entries
 in both data sets the difference can be calculated with:
 ```
-public List<DifferenceEntry<T>> GetDifference(
+public List<DifferenceEntry<T, TU>> GetDifference(
     in ICollection<EntryRefDifference<TU>> entryRefDifferenceCollection,
     in IEnumerable<T> data1,
     in IEnumerable<T> data2)
@@ -124,9 +124,9 @@ This allows (in principle) to iterate through the data entries instead of loadin
 ### Difference progression
 The difference progression can be calculated with:
 ```
-public List<DifferenceEntry<T>> GetDifferenceProgression(
-    in ICollection<DifferenceEntry<T>> differenceList1,
-    in ICollection<DifferenceEntry<T>> differenceList2)
+public List<DifferenceEntry<T, TU>> GetDifferenceProgression(
+    in ICollection<DifferenceEntry<T, TU>> differenceList1,
+    in ICollection<DifferenceEntry<T, TU>> differenceList2)
 ```
 
 A more (memory) efficient version is available which first (as a prelimenary step)
@@ -140,22 +140,22 @@ public List<EntryRefDifference<TU>> GetEntryRefDifferenceProgression(
 Using the `EntryRef` difference progression and an enumeration for the difference entries
 in both data sets the difference progression can be calculated with:
 ```
-public List<DifferenceEntry<T>> GetDifferenceProgression(
+public List<DifferenceEntry<T, TU>> GetDifferenceProgression(
     in ICollection<EntryRefDifference<TU>> entryRefDifferenceCollection,
-    in IEnumerable<DifferenceEntry<T>> differenceData1,
-    in IEnumerable<DifferenceEntry<T>> differenceData2)
+    in IEnumerable<DifferenceEntry<T, TU>> differenceData1,
+    in IEnumerable<DifferenceEntry<T, TU>> differenceData2)
 ```
 
 ### Squashed differences
 Squashed differences can be calculated with:
 ```
-public List<DifferenceEntry<T>> GetSquashedDifference(params ICollection<DifferenceEntry<T>>[] differenceCollectionArray)
+public List<DifferenceEntry<T, TU>> GetSquashedDifference(params ICollection<DifferenceEntry<T, TU>>[] differenceCollectionArray)
 ```
 
 Currently no memory efficient version is available...
 
 ### Support methods
-To convert a `DifferenceEntry<T>` to an `EquatableDifferenceEntry<T, TU>` the following support method can be used:
+To convert a `DifferenceEntry<T, TU>` to an `EquatableDifferenceEntry<T, TU>` the following support method can be used:
 ```
-public EquatableDifferenceEntry<T, TU> ToEquatableDifferenceEntry(DifferenceEntry<T> differenceEntry)
+public EquatableDifferenceEntry<T, TU> ToEquatableDifferenceEntry(DifferenceEntry<T, TU> differenceEntry)
 ```

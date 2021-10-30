@@ -17,7 +17,7 @@ namespace TestApp.EF
             : base(idSelector, entryEqualityComparer)
         { }
 
-        public List<DifferenceEntry<T>> GetDbDifference(DbSet<T> state1, DbSet<T> state2)
+        public List<DifferenceEntry<T, TU>> GetDbDifference(DbSet<T> state1, DbSet<T> state2)
         {
             var entryRefDifference = GetEntryRefDifference(
                 state1
@@ -38,16 +38,22 @@ namespace TestApp.EF
             return difference;
         }
 
-        public List<DifferenceEntry<T>> GetDbDifferenceProgression(DbSet<DifferenceEntry<T>> state1, DbSet<DifferenceEntry<T>> state2)
+        public List<DifferenceEntry<T, TU>> GetDbDifferenceProgression(
+            DbSet<DifferenceEntry<T, TU>> state1,
+            DbSet<DifferenceEntry<T, TU>> state2,
+            int chunkSize = 1000)
         {
-            // TODO: Maybe we should introduce a data class for difference entries with an Id??
             var entryRefDifferenceList = GetEntryRefDifferenceProgression(
                 state1
-                    .Select(d => d.ToTrivialEntryRefDifference(EntryIdSelector))
+                    .Chunk(chunkSize)
+                    .SelectMany(g => g
+                        .Select(d => d.ToTrivialEntryRefDifference()))
                     .OrderBy(d => d.Id)
                     .ToList(),
                 state2
-                    .Select(d => d.ToTrivialEntryRefDifference(EntryIdSelector))
+                    .Chunk(chunkSize)
+                    .SelectMany(g => g
+                        .Select(d => d.ToTrivialEntryRefDifference()))
                     .OrderBy(d => d.Id)
                     .ToList()
             );
@@ -59,10 +65,10 @@ namespace TestApp.EF
             return differenceProgression;
         }
 
-        public List<DifferenceEntry<T>> GetDbSquashedDifference(params DbSet<DifferenceEntry<T>>[] stateArray)
+        public List<DifferenceEntry<T, TU>> GetDbSquashedDifference(params DbSet<DifferenceEntry<T, TU>>[] stateArray)
         {
             var stateList = stateArray
-                .Select(dbSet => (ICollection<DifferenceEntry<T>>)dbSet.ToList())
+                .Select(dbSet => (ICollection<DifferenceEntry<T, TU>>)dbSet.ToList())
                 .ToArray();
             var squashedDifference = GetSquashedDifference(stateList);
 

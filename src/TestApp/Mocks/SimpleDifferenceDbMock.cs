@@ -8,7 +8,7 @@ using TestApp.TestData;
 namespace TestApp.Mocks
 {
     public class SimpleDifferenceDbMock
-        : DbMock<DifferenceEntry<SimpleTestEntry>, string>,
+        : DbMock<DifferenceEntry<SimpleTestEntry, string>, string>,
             IDifferenceDbMock<SimpleTestEntry, string>
     {
         // ReSharper disable once MemberCanBePrivate.Global
@@ -16,7 +16,7 @@ namespace TestApp.Mocks
             : base(x => x.ExampleEntry.Id)
         { }
 
-        public static SimpleDifferenceDbMock InitializeFromCollection(params DifferenceEntry<SimpleTestEntry>[] entryArray)
+        public static SimpleDifferenceDbMock InitializeFromCollection(params DifferenceEntry<SimpleTestEntry, string>[] entryArray)
         {
             var dbMock = new SimpleDifferenceDbMock();
             dbMock.Add(entryArray);
@@ -37,7 +37,7 @@ namespace TestApp.Mocks
         public ICollection<EntryRefDifference<string>> GetAllEntryRefDifferences()
         {
             return EntryDictionary.Values
-                .Select(d => d.ToTrivialEntryRefDifference(x => x.Id))
+                .Select(d => d.ToTrivialEntryRefDifference())
                 .ToList();
         }
     }

@@ -17,7 +17,7 @@ namespace TestApp.EF
         where T : class
         where TU : notnull
     {
-        private const int ChunkSize = 1000;
+        protected const int ChunkSize = 1000;
         private static readonly DbContextOptionsBuilder<EfInMemoryContext<T, TU>> OptionsBuilder = new();
 
         public DbSet<T> EntrySet { get; set; } = null!;
