@@ -11,7 +11,7 @@ namespace TestApp
         void AddFromJson(string json, JsonSerializerOptions? options = null);
         string SerializeToJson(JsonSerializerOptions? options = null);
         IEnumerable<T> GetAllAsOrderedEnumerable();
-        IEnumerable<T> GetAllEnumerableByIdList(IList<TU> idList);
+        IEnumerable<T> GetAllAsEnumerableByIdList(IList<TU> idList);
         IList<T> GetAll();
         IList<T> GetAllByIdList(IList<TU> idList);
         HashSet<TU> GetAllIds();

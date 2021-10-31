@@ -66,7 +66,7 @@ namespace TestApp.Mocks
             }
         }
 
-        public IEnumerable<T> GetAllEnumerableByIdList(IList<TU> idList)
+        public IEnumerable<T> GetAllAsEnumerableByIdList(IList<TU> idList)
         {
             foreach (var entry in idList
                 .Select(id => EntryDictionary[id]))

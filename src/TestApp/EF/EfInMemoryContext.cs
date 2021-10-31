@@ -69,13 +69,38 @@ namespace TestApp.EF
 
         public IEnumerable<T> GetAllAsOrderedEnumerable()
         {
-            return EntrySet;
+            var count = EntrySet.Count();
+
+            for (var skipCount = 0; skipCount < count; skipCount += ChunkSize)
+            {
+                var chunkEnumerable = EntrySet
+                    .AsNoTracking()
+                    .OrderBy(EntryIdSelector)
+                    .Skip(skipCount)
+                    .Take(ChunkSize)
+                    .AsEnumerable();
+
+                foreach (var entry in chunkEnumerable)
+                {
+                    yield return entry;
+                }
+            }
         }
 
-        public IEnumerable<T> GetAllEnumerableByIdList(IList<TU> idList)
+        public IEnumerable<T> GetAllAsEnumerableByIdList(IList<TU> idList)
         {
-            return idList.CustomChunk(ChunkSize)
-                .SelectMany(subList => EntrySet.Where(e => subList.Contains(EntryIdSelector(e))));
+            foreach (var subList in idList.CustomChunk(ChunkSize))
+            {
+                var chunkEnumerable = EntrySet
+                    .AsNoTracking()
+                    .Where(e => subList.Contains(EntryIdSelector(e)))
+                    .AsEnumerable();
+
+                foreach (var entry in chunkEnumerable)
+                {
+                    yield return entry;
+                }
+            }
         }
 
         public IList<T> GetAll()
@@ -85,7 +110,7 @@ namespace TestApp.EF
 
         public IList<T> GetAllByIdList(IList<TU> idList)
         {
-            return GetAllEnumerableByIdList(idList).ToList();
+            return GetAllAsEnumerableByIdList(idList).ToList();
         }
 
         public HashSet<TU> GetAllIds()
