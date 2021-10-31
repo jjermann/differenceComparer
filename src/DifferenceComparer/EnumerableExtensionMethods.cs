@@ -7,13 +7,20 @@ namespace DifferenceComparer
     {
         public static IEnumerable<List<T>> CustomChunk<T>(
             this IEnumerable<T> source,
-            int chunkSize)
+            int? chunkSize)
         {
-            using var enumerator = source.GetEnumerator();
-
-            while (enumerator.MoveNext())
+            if (!chunkSize.HasValue)
             {
-                yield return GetChunk(enumerator, chunkSize).ToList();
+                yield return source.ToList();
+            }
+            else
+            {
+                using var enumerator = source.GetEnumerator();
+
+                while (enumerator.MoveNext())
+                {
+                    yield return GetChunk(enumerator, chunkSize.Value).ToList();
+                }
             }
         }
 

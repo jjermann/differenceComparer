@@ -41,7 +41,7 @@ namespace TestApp.EF
         public List<DifferenceEntry<T, TU>> GetDbDifferenceProgression(
             DbSet<DifferenceEntry<T, TU>> state1,
             DbSet<DifferenceEntry<T, TU>> state2,
-            int chunkSize = 1000)
+            int? chunkSize = 1000)
         {
             var entryRefDifferenceList = GetEntryRefDifferenceProgression(
                 state1

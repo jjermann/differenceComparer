@@ -188,7 +188,7 @@ namespace DifferenceComparer
             in ICollection<EntryRefDifference<TU>> entryRefDifferenceCollection,
             in IEnumerable<T> data1,
             in IEnumerable<T> data2,
-            int chunkSize = 1000)
+            int? chunkSize = 1000)
         {
             var entryRefDictionary = entryRefDifferenceCollection
                 .ToDictionary(d => d.Id, d => d);
@@ -206,6 +206,7 @@ namespace DifferenceComparer
             var unprocessedHashSet = entryRefDictionary.Keys.ToHashSet();
 
             var zipEnumerable = data1.CustomChunk(chunkSize).CustomZip(data2.CustomChunk(chunkSize));
+
             foreach (var p in zipEnumerable)
             {
                 if (p.First != null)
@@ -297,7 +298,11 @@ namespace DifferenceComparer
                 .ToList();
             var entryRefDifferenceCollection = GetEntryRefDifference(idList1, idList2);
 
-            return GetDifference(entryRefDifferenceCollection, col1, col2);
+            return GetDifference(
+                entryRefDifferenceCollection,
+                col1,
+                col2,
+                null);
         }
 
         private void ValidateEntryRefDifferenceList(
@@ -784,7 +789,7 @@ namespace DifferenceComparer
             in ICollection<EntryRefDifference<TU>> entryRefDifferenceCollection,
             in IEnumerable<DifferenceEntry<T, TU>> differenceData1,
             in IEnumerable<DifferenceEntry<T, TU>> differenceData2,
-            int chunkSize = 1000)
+            int? chunkSize = 1000)
         {
             var entryRefDictionary = entryRefDifferenceCollection
                 .ToDictionary(d => d.Id, d => d);
@@ -802,6 +807,7 @@ namespace DifferenceComparer
             var unprocessedHashSet = entryRefDictionary.Keys.ToHashSet();
 
             var zipEnumerable = differenceData1.CustomChunk(chunkSize).CustomZip(differenceData2.CustomChunk(chunkSize));
+
             foreach (var p in zipEnumerable)
             {
                 if (p.First != null)
@@ -905,7 +911,8 @@ namespace DifferenceComparer
             return GetDifferenceProgression(
                 entryRefDifferenceCollection,
                 differenceList1,
-                differenceList2);
+                differenceList2,
+                null);
         }
 
         // Remark: This method is not symmetric.
